@@ -20,17 +20,4 @@
 *.jpeg
 *.xlsx
 
-# Yolo associated files
-online/processed
-online/labelling
-online/logs
-online/.coverage
-offline/plot_images
-offline/results
-offline/mongo_images
-offline/labelling_jobs
-
-# INCLUDE unit test images
-!online/capture/TEST/*/*.jpg
-!online/capture/TEST/*/*/*.jpg
-!online/capture/TEST/*/*/images/*.jpg
+**pycache**
