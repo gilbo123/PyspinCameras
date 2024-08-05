@@ -1,0 +1,36 @@
+# Compiled Python bytecode
+*.py[cod]
+*.pyc
+
+# Log files
+*.log
+
+# Package files
+*.jar
+
+# Large media files
+*.mp4
+*.tiff
+*.avi
+*.flv
+*.mov
+*.wmv
+*.jpg
+*.png
+*.jpeg
+*.xlsx
+
+# Yolo associated files
+online/processed
+online/labelling
+online/logs
+online/.coverage
+offline/plot_images
+offline/results
+offline/mongo_images
+offline/labelling_jobs
+
+# INCLUDE unit test images
+!online/capture/TEST/*/*.jpg
+!online/capture/TEST/*/*/*.jpg
+!online/capture/TEST/*/*/images/*.jpg
