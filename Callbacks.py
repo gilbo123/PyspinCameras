@@ -9,7 +9,7 @@ import cv2
 class SaveImageCallback:
     save_folder: str
 
-    def __call__(self, image_converted, filename: str):
+    def __call__(self, image_converted, filename: str) -> None:
         """
         Callback to save images
 
@@ -40,12 +40,12 @@ class SaveVideoCallback:
     def __post_init__(self):
         self.out = cv2.VideoWriter(
             f"{self.save_folder}/{self.vid_name}",
-            cv2.VideoWriter_fourcc(f"*{self.fourcc}"),
+            cv2.VideoWriter_fourcc(*f"{self.fourcc}"),
             self.fps,
             (self.image_size),
         )
 
-    def __call__(self, image_converted, filename: str):
+    def __call__(self, image_converted, filename: str) -> None:
         """
         Callback to save video
 
