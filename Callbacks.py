@@ -1,24 +1,34 @@
+"""
+Callbacks.py
+
+This module contains callback classes for Processing images
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-
 import cv2
 
 
 @dataclass
 class SaveImageCallback:
+    """
+    Callback class to save images.
+
+    Attributes:
+        save_folder (str): The folder where images will be saved.
+    """
+
     save_folder: str
 
     def __call__(self, image_converted, filename: str) -> None:
         """
-        Callback to save images
+        Callback to save an image.
 
-        :param image_converted: Image
-        :type image_converted: Image
-        :param filename: Filename
-        :type filename: str
+        Args:
+            image_converted (Image): Image object that can be converted to a numpy array.
+            filename (str): Filename for the saved image.
         """
-
         image_converted_numpy = image_converted.GetNDArray()
         # convert BGR to RGB
         image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)  # type: ignore
@@ -31,6 +41,17 @@ class SaveImageCallback:
 
 @dataclass
 class SaveVideoCallback:
+    """
+    Callback class to save videos.
+
+    Attributes:
+        save_folder (str): The folder where videos will be saved.
+        fourcc (str): FourCC code for the video codec.
+        fps (int): Frames per second for the video.
+        image_size (tuple[int, int]): Size of the video frames.
+        vid_name (str): Name of the output video file.
+    """
+
     save_folder: str
     fourcc: str
     fps: int
@@ -38,6 +59,9 @@ class SaveVideoCallback:
     vid_name: str = "output.mp4"
 
     def __post_init__(self):
+        """
+        Initializes the video writer object.
+        """
         self.out = cv2.VideoWriter(
             f"{self.save_folder}/{self.vid_name}",
             cv2.VideoWriter_fourcc(*f"{self.fourcc}"),
@@ -47,19 +71,20 @@ class SaveVideoCallback:
 
     def __call__(self, image_converted, filename: str) -> None:
         """
-        Callback to save video
+        Callback to save a video frame.
 
-        :param image_converted: Image
-        :type image_converted: Image
-        :param filename: str
+        Args:
+            image_converted (Image): Image object that can be converted to a numpy array.
+            filename (str): Filename for the saved frame (not used in this method).
         """
-
         image_converted_numpy = image_converted.GetNDArray()
         # convert BGR to RGB
         image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
         self.out.write(image_converted_numpy)
-        # print(image
 
     def __del__(self):
+        """
+        Releases the video writer object and saves the video file.
+        """
         self.out.release()
         print(f"Video {self.save_folder}/{self.vid_name} saved.")
