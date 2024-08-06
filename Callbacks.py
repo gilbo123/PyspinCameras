@@ -109,6 +109,7 @@ class SaveVideoffmpegcvCPU:
             f"{self.save_folder}/{self.vid_name}",
             self.fourcc,
             self.fps,
+            pix_fmt="rgb24",
         )
 
     def __call__(self, image_converted, filename: str) -> None:
