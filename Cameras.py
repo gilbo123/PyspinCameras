@@ -919,7 +919,7 @@ class Cameras:
 
                 # check if cam has a callback function
                 if self.camera_list[cam_num]._callback_set:
-                    sleep(0.001)
+                    sleep(0.000000000001)
                     continue
 
                 # Retrieve next received image and ensure image completion
