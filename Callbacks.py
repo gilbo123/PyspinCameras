@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import cv2
 import ffmpegcv
+import time
 
 
 @dataclass
@@ -92,7 +93,7 @@ class SaveVideoCallback:
 
 
 @dataclass
-class SaveVideoffmpegcv:
+class SaveVideoffmpegcvCPU:
     save_folder: str
     fourcc: str
     fps: int
@@ -103,8 +104,11 @@ class SaveVideoffmpegcv:
         """
         Initializes the video writer object.
         """
-        self.out = ffmpegcv.VideoWriterNV(
-            f"{self.save_folder}/{self.vid_name}", self.fourcc, self.fps
+        self.out = ffmpegcv.noblock(
+            ffmpegcv.VideoWriter,
+            f"{self.save_folder}/{self.vid_name}",
+            self.fourcc,
+            self.fps,
         )
 
     def __call__(self, image_converted, filename: str) -> None:
@@ -119,6 +123,7 @@ class SaveVideoffmpegcv:
         # convert BGR to RGB
         # image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
         self.out.write(image_converted_numpy)
+        time.sleep(0.000001)
 
     def __del__(self):
         """
