@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: SpinCameras
+Version: 0.0.1
+Summary: An easy access package for Flir (Spinnaker) cameras.
+Author-email: Gilbert Eaton <gilberteaton@gmal.com>, Jonathon Holder <jonathon.holder.90@gmail.com>
+Project-URL: Homepage, https://github.com/gilbo123/SpinCameras
+Project-URL: Issues, https://github.com/gilbo123/SpinCameras/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# SpinCameras
+Easy access for Spinakker-based (FLIR) machine vision cameras. 
