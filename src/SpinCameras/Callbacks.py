@@ -194,7 +194,8 @@ class SaveVideoGstreamer:
     """
 
     save_folder: str
-    codec: str = "x264enc"
+    video_pipeline: str = "default"
+    # codec: str = "x264enc"
     fps: int = 10
     image_size: tuple[int, int] = (3072, 2048)
     vid_name: str = "output.mp4"
@@ -202,12 +203,25 @@ class SaveVideoGstreamer:
     def __post_init__(self) -> None:
         Gst.init(None)
 
-        pipeline_str = (
-            f"appsrc name=source is-live=true format=time ! "
-            f"video/x-raw,format=RGB,width={self.image_size[0]},height={self.image_size[1]},framerate={self.fps}/1 ! "
-            f"videoconvert ! {self.codec} ! h264parse ! mp4mux ! "
-            f"filesink location={self.save_folder}/{self.vid_name}"
-        )
+        if self.video_pipeline == "default":
+            pipeline_str = (
+                f"appsrc name=source is-live=true format=time ! "
+                f"video/x-raw,format=RGB,width={self.image_size[0]},height={self.image_size[1]},framerate={self.fps}/1 ! "
+                f"videoconvert ! x264enc ! h264parse ! mp4mux ! "
+                f"filesink location={self.save_folder}/{self.vid_name}"
+            )
+
+        elif self.video_pipeline == "nvenc":
+            pipeline_str = (
+                f"appsrc name=source is-live=true format=time ! "
+                f"video/x-raw,format=RGB,width={self.image_size[0]},height={self.image_size[1]},framerate={self.fps}/1 ! "
+                f"videoconvert ! nvvidconv ! nvv4l2h264enc ! h264parse ! mp4mux ! "
+                f"filesink location={self.save_folder}/{self.vid_name}"
+            )
+
+        else:
+            pipeline_str = self.video_pipeline
+
         self.pipeline = Gst.parse_launch(pipeline_str)
         self.appsrc = self.pipeline.get_by_name("source")
 
