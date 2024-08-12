@@ -204,7 +204,7 @@ class SaveVideoGstreamer:
 
         pipeline_str = (
             f"appsrc name=source is-live=true format=time ! "
-            f"video/x-raw,format=BGR,width={self.image_size[0]},height={self.image_size[1]},framerate={self.fps}/1 ! "
+            f"video/x-raw,format=RGB,width={self.image_size[0]},height={self.image_size[1]},framerate={self.fps}/1 ! "
             f"videoconvert ! {self.codec} ! h264parse ! mp4mux ! "
             f"filesink location={self.save_folder}/{self.vid_name}"
         )
