@@ -7,13 +7,7 @@ This module contains callback classes for Processing images
 from __future__ import annotations
 
 from dataclasses import dataclass
-import cv2
 
-# import ffmpegcv
-import gi
-
-gi.require_version("Gst", "1.0")
-from gi.repository import Gst, GObject
 import time
 
 
@@ -28,6 +22,12 @@ class SaveImageCallback:
 
     save_folder: str
 
+    def __post_init__(self) -> None:
+        """Use Lazy import to avoid importing cv2 if not needed."""
+        from cv2 import imwrite as cv2_imwrite
+        from cv2 import cvtColor as cv2_cvtColor
+        from cv2 import COLOR_BGR2RGB as cv2_COLOR_BGR2RGB
+
     def __call__(self, image_converted, filename: str) -> None:
         """
         Callback to save an image.
@@ -38,11 +38,11 @@ class SaveImageCallback:
         """
         image_converted_numpy = image_converted.GetNDArray()
         # convert BGR to RGB
-        image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)  # type: ignore
+        image_converted_numpy = cv2_cvtColor(image_converted_numpy, cv2_COLOR_BGR2RGB)  # type: ignore
         print(image_converted_numpy.shape)
 
         # save the image
-        cv2.imwrite(f"{self.save_folder}/{filename}", image_converted_numpy)  # type: ignore
+        cv2_imwrite(f"{self.save_folder}/{filename}", image_converted_numpy)  # type: ignore
         print(f"Callback CLASS - Image {filename} saved.")
 
 
@@ -67,11 +67,20 @@ class SaveVideoCallback:
 
     def __post_init__(self) -> None:
         """
+        Use Lazy import to avoid importing cv2 if not needed.
         Initializes the video writer object.
         """
-        self.out = cv2.VideoWriter(
+
+        # Lazy imports
+        from cv2 import VideoWriter as cv2_VideoWriter
+        from cv2 import VideoWriter_fourcc as cv2_VideoWriter_fourcc
+        from cv2 import cvtColor as cv2_cvtColor
+        from cv2 import COLOR_BGR2RGB as cv2_COLOR_BGR2RGB
+
+        # Initalise video writer object
+        self.out = cv2_VideoWriter(
             f"{self.save_folder}/{self.vid_name}",
-            cv2.VideoWriter_fourcc(*f"{self.fourcc}"),
+            cv2_VideoWriter_fourcc(*f"{self.fourcc}"),
             self.fps,
             (self.image_size),
         )
@@ -86,7 +95,7 @@ class SaveVideoCallback:
         """
         image_converted_numpy = image_converted.GetNDArray()
         # convert BGR to RGB
-        image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
+        image_converted_numpy = cv2_cvtColor(image_converted_numpy, cv2_COLOR_BGR2RGB)
         self.out.write(image_converted_numpy)
 
     def __del__(self):
@@ -107,10 +116,17 @@ class SaveVideoffmpegcvCPU:
 
     def __post_init__(self) -> None:
         """
+        Use Lazy import to avoid importing ffmpegcv if not needed.
         Initializes the video writer object.
         """
-        self.out = ffmpegcv.noblock(
-            ffmpegcv.VideoWriter,
+        
+        # Lazy imports
+        from ffmpegcv import VideoWriter as ffmpegcv_VideoWriter
+        import ffmpegcv import noblock as ffmpegcv_noblock
+
+        # Initialise video writer object
+        self.out = ffmpegcv_noblock(
+            ffmpegcv_VideoWriter,
             f"{self.save_folder}/{self.vid_name}",
             self.fourcc,
             self.fps,
@@ -126,8 +142,7 @@ class SaveVideoffmpegcvCPU:
             filename (str): Filename for the saved frame (not used in this method).
         """
         image_converted_numpy = image_converted.GetNDArray()
-        # convert BGR to RGB
-        # image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
+
         self.out.write(image_converted_numpy)
         time.sleep(0.000001)
 
@@ -149,9 +164,15 @@ class SaveVideoffmpegcvGPU:
 
     def __post_init__(self) -> None:
         """
+        Use Lazy import to avoid importing ffmpegcv if not needed.
         Initializes the video writer object.
         """
-        self.out = ffmpegcv.VideoWriterNV(
+
+        # Lazy imports
+        from ffmpegcv import VideoWriterNV as ffmpegcv_VideoWriterNV
+
+        # Initialise Video writer object
+        self.out = ffmpegcv_VideoWriterNV(
             f"{self.save_folder}/{self.vid_name}",
             self.fourcc,
             self.fps,
@@ -167,8 +188,7 @@ class SaveVideoffmpegcvGPU:
             filename (str): Filename for the saved frame (not used in this method).
         """
         image_converted_numpy = image_converted.GetNDArray()
-        # convert BGR to RGB
-        # image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
+
         self.out.write(image_converted_numpy)
         time.sleep(0.000001)
 
@@ -187,7 +207,7 @@ class SaveVideoGstreamer:
 
     Attributes:
         save_folder (str): The folder where the video will be saved.
-        codec (str): The codec to use for video encoding (e.g., "x264enc").
+        video_pipeline (str): Gstreamer pipeline for video processing.
         fps (int): Frames per second for the output video.
         image_size (tuple[int, int]): The size of the input images (width, height).
         vid_name (str): The name of the output video file.
@@ -195,14 +215,25 @@ class SaveVideoGstreamer:
 
     save_folder: str
     video_pipeline: str = "default"
-    # codec: str = "x264enc"
     fps: int = 10
     image_size: tuple[int, int] = (3072, 2048)
     vid_name: str = "output.mp4"
 
     def __post_init__(self) -> None:
+        """
+        Use lazy import to avoid importing GStreamer if not needed.
+        Initializes the GStreamer pipeline and starts the video recording.
+        """
+
+        # Lazy imports
+        import gi
+        gi.require_version("Gst", "1.0")
+        from gi.repository import Gst, GObject
+
+        # Initialize GStreamer
         Gst.init(None)
 
+        # Define the pipeline
         if self.video_pipeline == "default":
             pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
@@ -222,6 +253,7 @@ class SaveVideoGstreamer:
         else:
             pipeline_str = self.video_pipeline
 
+        # Create the pipeline
         self.pipeline = Gst.parse_launch(pipeline_str)
         self.appsrc = self.pipeline.get_by_name("source")
 
