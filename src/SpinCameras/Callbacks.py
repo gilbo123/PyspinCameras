@@ -132,3 +132,86 @@ class SaveVideoffmpegcvCPU:
         """
         self.out.release()
         print(f"Video {self.save_folder}/{self.vid_name} saved.")
+
+
+@dataclass
+class SaveVideoffmpegcvCPU:
+    save_folder: str
+    fourcc: str
+    fps: int
+    image_size: tuple[int, int] = (3072, 2048)
+    vid_name: str = "output.mp4"
+
+    def __post_init__(self) -> None:
+        """
+        Initializes the video writer object.
+        """
+        self.out = ffmpegcv.noblock(
+            ffmpegcv.VideoWriter,
+            f"{self.save_folder}/{self.vid_name}",
+            self.fourcc,
+            self.fps,
+            pix_fmt="rgb24",
+        )
+
+    def __call__(self, image_converted, filename: str) -> None:
+        """
+        Callback to save a video frame.
+
+        Args:
+            image_converted (Image): Image object that can be converted to a numpy array.
+            filename (str): Filename for the saved frame (not used in this method).
+        """
+        image_converted_numpy = image_converted.GetNDArray()
+        # convert BGR to RGB
+        # image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
+        self.out.write(image_converted_numpy)
+        time.sleep(0.000001)
+
+    def __del__(self):
+        """
+        Releases the video writer object and saves the video file.
+        """
+        self.out.release()
+        print(f"Video {self.save_folder}/{self.vid_name} saved.")
+
+
+@dataclass
+class SaveVideoffmpegcvGPU:
+    save_folder: str
+    fourcc: str
+    fps: int
+    image_size: tuple[int, int] = (3072, 2048)
+    vid_name: str = "output.mp4"
+
+    def __post_init__(self) -> None:
+        """
+        Initializes the video writer object.
+        """
+        self.out = ffmpegcv.VideoWriterNV(
+            f"{self.save_folder}/{self.vid_name}",
+            self.fourcc,
+            self.fps,
+            pix_fmt="rgb24",
+        )
+
+    def __call__(self, image_converted, filename: str) -> None:
+        """
+        Callback to save a video frame.
+
+        Args:
+            image_converted (Image): Image object that can be converted to a numpy array.
+            filename (str): Filename for the saved frame (not used in this method).
+        """
+        image_converted_numpy = image_converted.GetNDArray()
+        # convert BGR to RGB
+        # image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
+        self.out.write(image_converted_numpy)
+        time.sleep(0.000001)
+
+    def __del__(self):
+        """
+        Releases the video writer object and saves the video file.
+        """
+        self.out.release()
+        print(f"Video {self.save_folder}/{self.vid_name} saved.")
