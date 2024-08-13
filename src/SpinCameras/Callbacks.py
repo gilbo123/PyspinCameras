@@ -9,9 +9,43 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import time
+import importlib
+from functools import wraps
+
+
+def lazy_import_attributes(*attribute_names):
+    def decorator(cls):
+        original_getattribute = cls.__getattribute__
+
+        @wraps(cls.__getattribute__)
+        def new_getattribute(self, name):
+            if name in attribute_names:
+                if not hasattr(self, f"_{name}"):
+                    module_name, attr_name = name.split(".")
+
+                    # Check if the attribute is already in the global namespace
+                    global_dict = globals()
+                    if module_name in global_dict and hasattr(
+                        global_dict[module_name], attr_name
+                    ):
+                        attr = getattr(global_dict[module_name], attr_name)
+                    else:
+                        # If not in global namespace, import it
+                        module = importlib.import_module(module_name)
+                        attr = getattr(module, attr_name)
+
+                    setattr(self, f"_{name}", attr)
+                return getattr(self, f"_{name}")
+            return original_getattribute(self, name)
+
+        cls.__getattribute__ = new_getattribute
+        return cls
+
+    return decorator
 
 
 @dataclass
+@lazy_import_attributes("cv2.imwrite", "cv2.cvtColor", "cv2.COLOR_BGR2RGB")
 class SaveImageCallback:
     """
     Callback class to save images.
@@ -24,9 +58,6 @@ class SaveImageCallback:
 
     def __post_init__(self) -> None:
         """Use Lazy import to avoid importing cv2 if not needed."""
-        from cv2 import imwrite as cv2_imwrite
-        from cv2 import cvtColor as cv2_cvtColor
-        from cv2 import COLOR_BGR2RGB as cv2_COLOR_BGR2RGB
 
     def __call__(self, image_converted, filename: str) -> None:
         """
@@ -38,15 +69,18 @@ class SaveImageCallback:
         """
         image_converted_numpy = image_converted.GetNDArray()
         # convert BGR to RGB
-        image_converted_numpy = cv2_cvtColor(image_converted_numpy, cv2_COLOR_BGR2RGB)  # type: ignore
-        print(image_converted_numpy.shape)
+        image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)  # type: ignore
+        # print(image_converted_numpy.shape)
 
         # save the image
-        cv2_imwrite(f"{self.save_folder}/{filename}", image_converted_numpy)  # type: ignore
+        cv2.imwrite(f"{self.save_folder}/{filename}", image_converted_numpy)  # type: ignore
         print(f"Callback CLASS - Image {filename} saved.")
 
 
 @dataclass
+@lazy_import_attributes(
+    "cv2.VideoWriter", "cv2.VideoWriter_fourcc", "cv2.cvtColor", "cv2.COLOR_BGR2RGB"
+)
 class SaveVideoCallback:
     """
     Callback class to save videos.
@@ -60,8 +94,8 @@ class SaveVideoCallback:
     """
 
     save_folder: str
-    fourcc: str
-    fps: int
+    fourcc: str = "mp4v"
+    fps: int = 15
     image_size: tuple[int, int] = (3072, 2048)
     vid_name: str = "output.mp4"
 
@@ -71,16 +105,10 @@ class SaveVideoCallback:
         Initializes the video writer object.
         """
 
-        # Lazy imports
-        from cv2 import VideoWriter as cv2_VideoWriter
-        from cv2 import VideoWriter_fourcc as cv2_VideoWriter_fourcc
-        from cv2 import cvtColor as cv2_cvtColor
-        from cv2 import COLOR_BGR2RGB as cv2_COLOR_BGR2RGB
-
         # Initalise video writer object
-        self.out = cv2_VideoWriter(
+        self.out = cv2.VideoWriter(
             f"{self.save_folder}/{self.vid_name}",
-            cv2_VideoWriter_fourcc(*f"{self.fourcc}"),
+            cv2.VideoWriter_fourcc(*f"{self.fourcc}"),
             self.fps,
             (self.image_size),
         )
@@ -95,7 +123,7 @@ class SaveVideoCallback:
         """
         image_converted_numpy = image_converted.GetNDArray()
         # convert BGR to RGB
-        image_converted_numpy = cv2_cvtColor(image_converted_numpy, cv2_COLOR_BGR2RGB)
+        image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
         self.out.write(image_converted_numpy)
 
     def __del__(self):
@@ -107,6 +135,7 @@ class SaveVideoCallback:
 
 
 @dataclass
+@lazy_import_attributes("ffmpegcv.VideoWriter", "ffmpegcv.noblock")
 class SaveVideoffmpegcvCPU:
     save_folder: str
     fourcc: str
@@ -119,14 +148,10 @@ class SaveVideoffmpegcvCPU:
         Use Lazy import to avoid importing ffmpegcv if not needed.
         Initializes the video writer object.
         """
-        
-        # Lazy imports
-        from ffmpegcv import VideoWriter as ffmpegcv_VideoWriter
-        import ffmpegcv import noblock as ffmpegcv_noblock
 
         # Initialise video writer object
-        self.out = ffmpegcv_noblock(
-            ffmpegcv_VideoWriter,
+        self.out = ffmpegcv.noblock(
+            ffmpegcv.VideoWriter,
             f"{self.save_folder}/{self.vid_name}",
             self.fourcc,
             self.fps,
@@ -155,6 +180,7 @@ class SaveVideoffmpegcvCPU:
 
 
 @dataclass
+@lazy_import_attributes("ffmpegcv.VideoWriterNV")
 class SaveVideoffmpegcvGPU:
     save_folder: str
     fourcc: str
@@ -168,11 +194,8 @@ class SaveVideoffmpegcvGPU:
         Initializes the video writer object.
         """
 
-        # Lazy imports
-        from ffmpegcv import VideoWriterNV as ffmpegcv_VideoWriterNV
-
         # Initialise Video writer object
-        self.out = ffmpegcv_VideoWriterNV(
+        self.out = ffmpegcv.VideoWriterNV(
             f"{self.save_folder}/{self.vid_name}",
             self.fourcc,
             self.fps,
@@ -207,7 +230,7 @@ class SaveVideoGstreamer:
 
     Attributes:
         save_folder (str): The folder where the video will be saved.
-        video_pipeline (str): Gstreamer pipeline for video processing.
+        video_pipeline (str): Gstreamer pipeline for video processing. options (default, nvenc) or custom.
         fps (int): Frames per second for the output video.
         image_size (tuple[int, int]): The size of the input images (width, height).
         vid_name (str): The name of the output video file.
@@ -227,6 +250,7 @@ class SaveVideoGstreamer:
 
         # Lazy imports
         import gi
+
         gi.require_version("Gst", "1.0")
         from gi.repository import Gst, GObject
 
