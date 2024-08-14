@@ -15,37 +15,50 @@ from functools import wraps
 
 def lazy_import_attributes(*attribute_names):
     def decorator(cls):
-        original_getattribute = cls.__getattribute__
+        original_init = cls.__init__
 
-        @wraps(cls.__getattribute__)
-        def new_getattribute(self, name):
-            if name in attribute_names:
-                if not hasattr(self, f"_{name}"):
-                    module_name, attr_name = name.split(".")
+        @wraps(cls.__init__)
+        def new_init(self, *args, **kwargs):
+            # print(f"Initializing {cls.__name__}")  # Debug print
 
-                    # Check if the attribute is already in the global namespace
-                    global_dict = globals()
-                    if module_name in global_dict and hasattr(
-                        global_dict[module_name], attr_name
-                    ):
-                        attr = getattr(global_dict[module_name], attr_name)
-                    else:
-                        # If not in global namespace, import it
-                        module = importlib.import_module(module_name)
+            global_dict = globals()
+
+            for name in attribute_names:
+                # print(f"Importing {name}")  # Debug print
+
+                # Split the name into module and attribute parts
+                parts = name.split(".")
+                module_name = parts[0]
+
+                # Import the module if it's not already in globals
+                if module_name not in global_dict:
+                    # print(f"Importing new module {module_name}")  # Debug print
+                    module = importlib.import_module(module_name)
+                    global_dict[module_name] = module
+                    if len(parts) > 1:
+                        attr_name = ".".join(parts[1:])
                         attr = getattr(module, attr_name)
+                        global_dict[attr_name] = attr
+                        # print(f"Added {attr_name} to global namespace")  # Debug print
+                    else:
+                        # If it's just a module, make sure it's in the class namespace
+                        setattr(cls, module_name, module)
+                        # print(f"Added {module_name} to class namespace")  # Debug print
+                else:
+                    # print(f"Using existing module {module_name}")  # Debug print
+                    pass
+                    # module = global_dict[module_name]
 
-                    setattr(self, f"_{name}", attr)
-                return getattr(self, f"_{name}")
-            return original_getattribute(self, name)
+            # Call the original __init__ 
+            original_init(self, *args, **kwargs)
 
-        cls.__getattribute__ = new_getattribute
+        cls.__init__ = new_init
         return cls
 
     return decorator
 
 
-@dataclass
-@lazy_import_attributes("cv2.imwrite", "cv2.cvtColor", "cv2.COLOR_BGR2RGB")
+@lazy_import_attributes("cv2")
 class SaveImageCallback:
     """
     Callback class to save images.
@@ -54,10 +67,8 @@ class SaveImageCallback:
         save_folder (str): The folder where images will be saved.
     """
 
-    save_folder: str
-
-    def __post_init__(self) -> None:
-        """Use Lazy import to avoid importing cv2 if not needed."""
+    def __init__(self, save_folder: str) -> None:
+        self.save_folder = save_folder
 
     def __call__(self, image_converted, filename: str) -> None:
         """
@@ -77,10 +88,7 @@ class SaveImageCallback:
         print(f"Callback CLASS - Image {filename} saved.")
 
 
-@dataclass
-@lazy_import_attributes(
-    "cv2.VideoWriter", "cv2.VideoWriter_fourcc", "cv2.cvtColor", "cv2.COLOR_BGR2RGB"
-)
+@lazy_import_attributes("cv2")
 class SaveVideoCallback:
     """
     Callback class to save videos.
@@ -93,17 +101,19 @@ class SaveVideoCallback:
         vid_name (str): Name of the output video file.
     """
 
-    save_folder: str
-    fourcc: str = "mp4v"
-    fps: int = 15
-    image_size: tuple[int, int] = (3072, 2048)
-    vid_name: str = "output.mp4"
-
-    def __post_init__(self) -> None:
-        """
-        Use Lazy import to avoid importing cv2 if not needed.
-        Initializes the video writer object.
-        """
+    def __init__(
+        self,
+        save_folder: str,
+        fourcc: str = "mp4v",
+        fps: int = 15,
+        image_size: tuple[int, int] = (3072, 2048),
+        vid_name: str = "output.mp4",
+    ) -> None:
+        self.save_folder = save_folder
+        self.fourcc = fourcc
+        self.fps = fps
+        self.image_size = image_size
+        self.vid_name = vid_name
 
         # Initalise video writer object
         self.out = cv2.VideoWriter(
@@ -134,20 +144,33 @@ class SaveVideoCallback:
         print(f"Video {self.save_folder}/{self.vid_name} saved.")
 
 
-@dataclass
-@lazy_import_attributes("ffmpegcv.VideoWriter", "ffmpegcv.noblock")
+@lazy_import_attributes("ffmpegcv")
 class SaveVideoffmpegcvCPU:
-    save_folder: str
-    fourcc: str
-    fps: int
-    image_size: tuple[int, int] = (3072, 2048)
-    vid_name: str = "output.mp4"
+    """
+    Callback class to save videos using ffmpegcv.
 
-    def __post_init__(self) -> None:
-        """
-        Use Lazy import to avoid importing ffmpegcv if not needed.
-        Initializes the video writer object.
-        """
+    Attributes:
+        save_folder (str): The folder where videos will be saved.
+        fourcc (str): FourCC code for the video codec.
+        fps (int): Frames per second for the video.
+        image_size (tuple[int, int]): Size of the video frames.
+        vid_name (str): Name of the output video file.
+    """
+
+    def __init__(
+        self,
+        save_folder: str,
+        fourcc: str,
+        fps: int,
+        image_size: tuple[int, int] = (3072, 2048),
+        vid_name: str = "output.mp4",
+    ) -> None:
+
+        self.save_folder = save_folder
+        self.fourcc = fourcc
+        self.fps = fps
+        self.image_size = image_size
+        self.vid_name = vid_name
 
         # Initialise video writer object
         self.out = ffmpegcv.noblock(
@@ -179,28 +202,41 @@ class SaveVideoffmpegcvCPU:
         print(f"Video {self.save_folder}/{self.vid_name} saved.")
 
 
-@dataclass
-@lazy_import_attributes("ffmpegcv.VideoWriterNV")
+@lazy_import_attributes("ffmpegcv")
 class SaveVideoffmpegcvGPU:
-    save_folder: str
-    fourcc: str
-    fps: int
-    image_size: tuple[int, int] = (3072, 2048)
-    vid_name: str = "output.mp4"
+            """
+        Callback class to save videos using ffmpegcv with GPU.
 
-    def __post_init__(self) -> None:
+        Attributes:
+            save_folder (str): The folder where videos will be saved.
+            fourcc (str): FourCC code for the video codec.
+            fps (int): Frames per second for the video.
+            image_size (tuple[int, int]): Size of the video frames.
+            vid_name (str): Name of the output video file.
         """
-        Use Lazy import to avoid importing ffmpegcv if not needed.
-        Initializes the video writer object.
-        """
+    def __init__(
+        self,
+        save_folder: str,
+        fourcc: str,
+        fps: int,
+        image_size: tuple[int, int] = (3072, 2048),
+        vid_name: str = "output.mp4",
+    ) -> None:
 
-        # Initialise Video writer object
+        self.save_folder = save_folder
+        self.fourcc = fourcc
+        self.fps = fps
+        self.image_size = image_size
+        self.vid_name = vid_name
+
+        # Initialise video writer object
         self.out = ffmpegcv.VideoWriterNV(
             f"{self.save_folder}/{self.vid_name}",
             self.fourcc,
             self.fps,
             pix_fmt="rgb24",
         )
+
 
     def __call__(self, image_converted, filename: str) -> None:
         """
@@ -223,7 +259,7 @@ class SaveVideoffmpegcvGPU:
         print(f"Video {self.save_folder}/{self.vid_name} saved.")
 
 
-@dataclass
+@lazy_import_attributes("gi")
 class SaveVideoGstreamer:
     """
     Callback class to save video using GStreamer.
@@ -236,21 +272,23 @@ class SaveVideoGstreamer:
         vid_name (str): The name of the output video file.
     """
 
-    save_folder: str
-    video_pipeline: str = "default"
-    fps: int = 10
-    image_size: tuple[int, int] = (3072, 2048)
-    vid_name: str = "output.mp4"
-
-    def __post_init__(self) -> None:
-        """
-        Use lazy import to avoid importing GStreamer if not needed.
-        Initializes the GStreamer pipeline and starts the video recording.
-        """
+    def __init__(
+        self, 
+        save_folder: str, 
+        video_pipeline: str = "default", 
+        fps: int = 10, 
+        image_size: tuple[int, int] = (3072, 2048), 
+        vid_name: str = "output.mp4"
+    ) -> None: 
+        
+        self.save_folder = save_folder
+        self.video_pipeline = video_pipeline
+        self.fps = fps
+        self.image_size = image_size
+        self.vid_name = vid_name
 
         # Lazy imports
         import gi
-
         gi.require_version("Gst", "1.0")
         from gi.repository import Gst, GObject
 
@@ -258,24 +296,24 @@ class SaveVideoGstreamer:
         Gst.init(None)
 
         # Define the pipeline
-        if self.video_pipeline == "default":
+        if video_pipeline == "default":
             pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
-                f"video/x-raw,format=RGB,width={self.image_size[0]},height={self.image_size[1]},framerate={self.fps}/1 ! "
+                f"video/x-raw,format=RGB,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
                 f"videoconvert ! x264enc ! h264parse ! mp4mux ! "
-                f"filesink location={self.save_folder}/{self.vid_name}"
+                f"filesink location={save_folder}/{vid_name}"
             )
 
-        elif self.video_pipeline == "nvenc":
+        elif video_pipeline == "nvenc":
             pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
-                f"video/x-raw,format=RGB,width={self.image_size[0]},height={self.image_size[1]},framerate={self.fps}/1 ! "
+                f"video/x-raw,format=RGB,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
                 f"videoconvert ! nvvidconv ! nvv4l2h264enc ! h264parse ! mp4mux ! "
-                f"filesink location={self.save_folder}/{self.vid_name}"
+                f"filesink location={save_folder}/{vid_name}"
             )
 
         else:
-            pipeline_str = self.video_pipeline
+            pipeline_str = video_pipeline
 
         # Create the pipeline
         self.pipeline = Gst.parse_launch(pipeline_str)
