@@ -129,6 +129,7 @@ class SaveVideoCallback:
         self.fps = fps
         self.image_size = image_size
         self.vid_name = vid_name
+        self.frame_count = 0
 
         # Initalise video writer object
         self.out = cv2.VideoWriter(
@@ -150,6 +151,8 @@ class SaveVideoCallback:
         # convert BGR to RGB
         image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)
         self.out.write(image_converted_numpy)
+        self.frame_count += 1
+        print(f"Frame {self.frame_count} added to video.")
 
     def __del__(self):
         """
