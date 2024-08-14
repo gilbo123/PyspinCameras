@@ -6,8 +6,6 @@ This module contains callback classes for Processing images
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import time
 import importlib
 from functools import wraps
@@ -35,17 +33,32 @@ def lazy_import_attributes(*attribute_names):
                     # print(f"Importing new module {module_name}")  # Debug print
                     module = importlib.import_module(module_name)
                     global_dict[module_name] = module
-                    if module_name == "gi":
+                    if name == "gi":
                         module.require_version("Gst", "1.0")
                     if len(parts) > 1:
-                        attr_name = ".".join(parts[-1:])
+                        attr_name = ".".join(parts[1:])
                         attr = getattr(module, attr_name)
-                        global_dict[attr_name] = attr
+                        global_dict[parts[-1:]] = attr
                         # print(f"Added {attr_name} to global namespace")  # Debug print
                     else:
                         # If it's just a module, make sure it's in the class namespace
                         setattr(cls, module_name, module)
                         # print(f"Added {module_name} to class namespace")  # Debug print
+                elif (
+                    module_name in global_dict
+                    and len(parts) > 1
+                    and parts[-1] not in global_dict
+                ):
+                    # print(f"Importing new attribute {parts[-1]}")  # Debug print
+                    if module_name == "gi":
+                        module = importlib.import_module(name)
+                        global_dict[parts[-1]] = module
+                    else:
+                        attr_name = ".".join(parts[1:])
+                        attr = getattr(global_dict[module_name], attr_name)
+                        global_dict[parts[-1:]] = attr
+                    # print(f"Added {attr_name} to global namespace")  # Debug print
+
                 else:
                     # print(f"Using existing module {module_name}")  # Debug print
                     pass
@@ -232,6 +245,8 @@ class SaveVideoffmpegcvGPU:
         self.image_size = image_size
         self.vid_name = vid_name
 
+        self.frame_count = 0
+
         # Initialise video writer object
         self.out = ffmpegcv.VideoWriterNV(
             f"{self.save_folder}/{self.vid_name}",
@@ -251,6 +266,8 @@ class SaveVideoffmpegcvGPU:
         image_converted_numpy = image_converted.GetNDArray()
 
         self.out.write(image_converted_numpy)
+        self.frame_count += 1
+        print(f"Frame {self.frame_count} added to video.")
         time.sleep(0.000001)
 
     def __del__(self):
@@ -288,12 +305,6 @@ class SaveVideoGstreamer:
         self.fps = fps
         self.image_size = image_size
         self.vid_name = vid_name
-
-        # Lazy imports
-        import gi
-
-        gi.require_version("Gst", "1.0")
-        from gi.repository import Gst, GObject
 
         # Initialize GStreamer
         Gst.init(None)
@@ -354,8 +365,8 @@ class SaveVideoGstreamer:
 
         # Push the buffer into appsrc
         ret = self.appsrc.emit("push-buffer", buffer)
-        if ret != Gst.FlowReturn.OK:
-            print(f"push-buffer returned {ret}")
+        # if ret != Gst.FlowReturn.OK:
+        #     print(f"push-buffer returned {ret}")
 
         self.frame_count += 1
         print(f"Frame {self.frame_count} added to video.")
