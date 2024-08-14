@@ -35,8 +35,10 @@ def lazy_import_attributes(*attribute_names):
                     # print(f"Importing new module {module_name}")  # Debug print
                     module = importlib.import_module(module_name)
                     global_dict[module_name] = module
+                    if module_name == "gi":
+                        module.require_version("Gst", "1.0")
                     if len(parts) > 1:
-                        attr_name = ".".join(parts[1:])
+                        attr_name = ".".join(parts[-1:])
                         attr = getattr(module, attr_name)
                         global_dict[attr_name] = attr
                         # print(f"Added {attr_name} to global namespace")  # Debug print
@@ -49,7 +51,7 @@ def lazy_import_attributes(*attribute_names):
                     pass
                     # module = global_dict[module_name]
 
-            # Call the original __init__ 
+            # Call the original __init__
             original_init(self, *args, **kwargs)
 
         cls.__init__ = new_init
@@ -204,16 +206,17 @@ class SaveVideoffmpegcvCPU:
 
 @lazy_import_attributes("ffmpegcv")
 class SaveVideoffmpegcvGPU:
-            """
-        Callback class to save videos using ffmpegcv with GPU.
+    """
+    Callback class to save videos using ffmpegcv with GPU.
 
-        Attributes:
-            save_folder (str): The folder where videos will be saved.
-            fourcc (str): FourCC code for the video codec.
-            fps (int): Frames per second for the video.
-            image_size (tuple[int, int]): Size of the video frames.
-            vid_name (str): Name of the output video file.
-        """
+    Attributes:
+        save_folder (str): The folder where videos will be saved.
+        fourcc (str): FourCC code for the video codec.
+        fps (int): Frames per second for the video.
+        image_size (tuple[int, int]): Size of the video frames.
+        vid_name (str): Name of the output video file.
+    """
+
     def __init__(
         self,
         save_folder: str,
@@ -237,7 +240,6 @@ class SaveVideoffmpegcvGPU:
             pix_fmt="rgb24",
         )
 
-
     def __call__(self, image_converted, filename: str) -> None:
         """
         Callback to save a video frame.
@@ -259,7 +261,7 @@ class SaveVideoffmpegcvGPU:
         print(f"Video {self.save_folder}/{self.vid_name} saved.")
 
 
-@lazy_import_attributes("gi")
+@lazy_import_attributes("gi", "gi.repository.Gst", "gi.repository.GObject")
 class SaveVideoGstreamer:
     """
     Callback class to save video using GStreamer.
@@ -273,14 +275,14 @@ class SaveVideoGstreamer:
     """
 
     def __init__(
-        self, 
-        save_folder: str, 
-        video_pipeline: str = "default", 
-        fps: int = 10, 
-        image_size: tuple[int, int] = (3072, 2048), 
-        vid_name: str = "output.mp4"
-    ) -> None: 
-        
+        self,
+        save_folder: str,
+        video_pipeline: str = "default",
+        fps: int = 10,
+        image_size: tuple[int, int] = (3072, 2048),
+        vid_name: str = "output.mp4",
+    ) -> None:
+
         self.save_folder = save_folder
         self.video_pipeline = video_pipeline
         self.fps = fps
@@ -289,6 +291,7 @@ class SaveVideoGstreamer:
 
         # Lazy imports
         import gi
+
         gi.require_version("Gst", "1.0")
         from gi.repository import Gst, GObject
 
