@@ -650,7 +650,7 @@ class Camera:
         except:
             pass
         try:
-            self.cam.DeInit()
+            self.deinitialise()
         except:
             pass
         try:
@@ -806,7 +806,7 @@ class Cameras:
 
         # Clear camera list before releasing system
         self._cams.Clear()
-        # self.camera_list = []
+        self.camera_list = []
 
     def acquire_images(self, num_images: int = -1) -> None:
         """
@@ -1015,6 +1015,7 @@ class Cameras:
         :rtype: None
         """
 
-        self.release_all_cameras()
+        # self.release_all_cameras()
         for camera in self.camera_list:
             del camera
+        self.release_all_cameras()
