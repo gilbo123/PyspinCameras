@@ -639,6 +639,25 @@ class Camera:
             print("Error: %s" % ex)
             return device_serial_number
 
+    def __del__(self) -> None:
+        """
+        Destructor to delete the camera object.
+
+        :return: None
+        """
+        try:
+            self.stop_acquisition()
+        except:
+            pass
+        try:
+            self.deinitialise()
+        except:
+            pass
+        try:
+            del self.cam
+        except:
+            pass
+
 
 @dataclass
 class Cameras:
@@ -987,3 +1006,16 @@ class Cameras:
             for camera in self.camera_list:
                 # End acquisition
                 camera.stop_acquisition()
+
+    def __del__(self) -> None:
+        """
+        Destructor to delete all cameras and clear the camera list.
+
+        :return: None
+        :rtype: None
+        """
+
+        # self.release_all_cameras()
+        for camera in self.camera_list:
+            del camera
+        self.release_all_cameras()
