@@ -352,7 +352,7 @@ class Camera:
                 print(
                     f"Not setting white balance selectors {[red_selector, blue_selector]} using white balance mode: {bal_mode}"
                 )
-                return False
+                return True
 
             # success
             return True
@@ -639,6 +639,61 @@ class Camera:
             print("Error: %s" % ex)
             return device_serial_number
 
+    ###################
+    ### TEMPERATURE ###
+    ###################
+
+    def get_device_temperature(self) -> float:
+        """
+        Return the temperature of the device.
+
+        :return: Temperature of the device.
+        :rtype: float
+        """
+
+        try:
+            # set the device temp after capture
+            temp = PySpin.CFloatPtr(
+                self.cam.GetNodeMap().GetNode("DeviceTemperature")
+            ).GetValue()
+            return temp
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return -1.0
+
+    ######################
+    ### IS_INITIALISED ###
+    ######################
+
+    def is_initialised(self) -> bool:
+        """
+        Check if the camera is initialised.
+
+        :return: True if initialised, False otherwise
+        :rtype: bool
+        """
+
+        return self.cam.IsInitialized()
+
+    ####################
+    ### IS_STREAMING ###
+    ####################
+
+    def is_streaming(self) -> bool:
+        """
+        Check if the camera is streaming.
+
+        :return: True if streaming, False otherwise
+        :rtype: bool
+        """
+
+        return self.cam.IsStreaming()
+
+    ###############
+    ### __DEL__ ###
+    ###############
+
     def __del__(self) -> None:
         """
         Destructor to delete the camera object.
@@ -666,6 +721,7 @@ class Cameras:
     save_folder: Optional[str] = None
     queue: Optional[Queue[dict[str, PySpin.ImagePtr | str]]] = None
     grab_timeout: int = 5000
+    verbose: bool = True
 
     def __post_init__(self) -> list[Camera]:
         """
@@ -688,7 +744,8 @@ class Cameras:
         self._cams: PySpin.CameraList = self.system.GetCameras()
 
         num_cameras = self._cams.GetSize()
-        print("Number of cameras detected: %d" % num_cameras)
+        if self.verbose:
+            print("Number of cameras detected: %d" % num_cameras)
 
         # Finish if there are no cameras
         if num_cameras == 0:
@@ -834,6 +891,8 @@ class Cameras:
                 # check if we have enough images
                 if num_images != -1 and num_images == _iter:
                     self.acquiring = False
+                    print(f"Acquired {num_images} images from each camera.")
+                    break
 
                 for i in range(len(self.camera_list)):
 
@@ -855,12 +914,13 @@ class Cameras:
                         )
                     else:
                         # Print image information
-                        width = image_result.GetWidth()
-                        height = image_result.GetHeight()
-                        print(
-                            "Camera %d grabbed image %d, width = %d, height = %d"
-                            % (i, _iter, width, height)
-                        )
+                        if self.verbose:
+                            width = image_result.GetWidth()
+                            height = image_result.GetHeight()
+                            print(
+                                "Camera %d grabbed image %d, width = %d, height = %d"
+                                % (i, _iter, width, height)
+                            )
 
                         # Retrieve device serial number for filename
                         device_serial_number: str = self.camera_list[
@@ -877,24 +937,27 @@ class Cameras:
                         filename = f"cam-{device_serial_number}_img-{_iter}_{dt}.jpg"
 
                         # save if save folder
-                        if self.save_folder:
+                        if self.save_folder is not None:
                             # Save image
                             filename = f"{self.save_folder}/{filename}"
                             image_converted.Save(filename)
 
                         # Queue set
-                        if self.queue:
+                        if self.queue is not None:
                             # save to queue
                             self.queue.put(
                                 {"image": image_converted, "filename": filename}
                             )
 
                         # print filename if nothing else
-                        print("Image grabbed at: %s" % filename)
+                        if self.verbose:
+                            print("Image grabbed at: %s" % filename)
 
                     # Release image
                     image_result.Release()
-                    print()
+
+                    if self.verbose:
+                        print()
 
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
@@ -904,108 +967,9 @@ class Cameras:
             self.acquiring = False
 
         # whatever happens, try to stop cameras
-        finally:
-            # End acquisition for each camera
-            self.stop_capture()
-
-    def acquire_images_by_cam_id(self, cam_id: str, num_images: int = -1) -> None:
-        """
-        This function acquires and saves images from a single device.
-        Acquires num_images from camera if specified.
-
-        :param cam_id: Camera ID to acquire images from.
-        :type cam_id: str
-        :param num_images: Number of images to acquire. Default is -1 (continuous).
-        :type num_images: int
-        :return: None
-        :rtype: None
-        """
-
-        try:
-            cam_num: int = -1
-            # Prepare each camera to acquire images
-            for i, camera in enumerate(self.camera_list):
-                if camera.get_serial_number() == cam_id:
-                    camera.start_acquisition()
-                    cam_num = i
-                    break
-
-            ## LOOP
-            _iter: int = 0
-            while self.acquiring:
-
-                # get the handle to the raw camera for quick access
-                cam: PySpin.CameraPtr = self.camera_list[i].cam
-
-                # check if cam has a callback function
-                if self.camera_list[cam_num]._callback_set:
-                    sleep(0.000000000001)
-                    continue
-
-                # Retrieve next received image and ensure image completion
-                image_result: PySpin.ImagePtr = cam.GetNextImage()
-
-                if image_result.IsIncomplete():
-                    print(
-                        "Image incomplete with image status %d ... \n"
-                        % image_result.GetImageStatus()
-                    )
-                else:
-                    # Print image information
-                    width = image_result.GetWidth()
-                    height = image_result.GetHeight()
-                    print(
-                        "Camera %d grabbed image %d, width = %d, height = %d"
-                        % (i, _iter, width, height)
-                    )
-
-                    # Convert image to mono 8
-                    image_converted: PySpin.ImagePtr = self.processor.Convert(
-                        image_result, PySpin.PixelFormat_RGB8
-                    )
-
-                    # Create a unique filename
-                    dt: str = datetime.now().strftime("%Y-%m-%dT%H:%M:%S:%f")
-                    filename = f"cam-{cam_id}_img-{_iter}_{dt}.jpg"
-
-                    # save if save folder
-                    if self.save_folder:
-                        # Save image
-                        filename = f"{self.save_folder}/{filename}"
-                        image_converted.Save(filename)
-
-                    # Queue set
-                    if self.queue:
-                        # save to queue
-                        self.queue.put({"image": image_converted, "filename": filename})
-
-                    # print filename if nothing else
-                    print("Image grabbed at: %s" % filename)
-
-                # Release image
-                image_result.Release()
-                print()
-
-                # got images from all camers
-                _iter += 1
-
-                # check if we have enough images
-                if num_images != -1 and num_images == _iter:
-                    self.acquiring = False
-
-        except PySpin.SpinnakerException as ex:
-            print("Error: %s" % ex)
-
-        except KeyboardInterrupt:
-            print("Keyboard interrupt detected.")
-            self.acquiring = False
-
-        # whatever happens, try to stop cameras
-        finally:
-            # End acquisition for each camera
-            for camera in self.camera_list:
-                # End acquisition
-                camera.stop_acquisition()
+        # finally:
+        #     # End acquisition for each camera
+        #     self.stop_capture()
 
     def __del__(self) -> None:
         """
