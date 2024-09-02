@@ -624,21 +624,12 @@ class Camera:
         """
 
         try:
-            # Retrieve GenICam nodemap
-            node_map = self.cam.GetNodeMap()
-
-            # Retrieve the node from the nodemap
-            node_packet_size = PySpin.CIntegerPtr(node_map.GetNode("GevSCPSPacketSize"))
-
-            # Ensure the node is valid
-            if not PySpin.IsAvailable(node_packet_size) or not PySpin.IsWritable(
-                node_packet_size
-            ):
+            if self.cam.GevSCPSPacketSize.GetAccessMode() != PySpin.RW:
                 print("Unable to set packet size. Aborting...")
                 return False
 
-            # Set the value
-            node_packet_size.SetValue(packet_size)
+            # Set the value of the packet size
+            self.cam.GevSCPSPacketSize.SetValue(packet_size)
 
             # success
             return True
