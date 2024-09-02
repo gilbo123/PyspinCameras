@@ -647,6 +647,46 @@ class Camera:
             print("Error: %s" % ex)
             return False
 
+    ###############################
+    ### DEVICE THROUGHPUT LIMIT ###
+    ###############################
+
+    def set_device_throughput_limit(self, limit: int = 150000000) -> bool:
+        """
+        Set the device throughput limit for the camera.
+
+        :param limit: Throughput limit to set.
+        :type limit: int
+        :return: True if successful, False otherwise
+        :rtype: bool
+        """
+
+        try:
+            # Retrieve GenICam nodemap
+            node_map = self.cam.GetNodeMap()
+
+            # Retrieve the node from the nodemap
+            node_device_throughput_limit = PySpin.CIntegerPtr(
+                node_map.GetNode("DeviceThroughputLimit")
+            )
+
+            # Ensure the node is valid
+            if not PySpin.IsAvailable(
+                node_device_throughput_limit
+            ) or not PySpin.IsWritable(node_device_throughput_limit):
+                print("Unable to set device throughput limit. Aborting...")
+                return False
+
+            # Set the value
+            node_device_throughput_limit.SetValue(limit)
+
+            # success
+            return True
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
+
     #################
     ### SERIAL NO ###
     #################
