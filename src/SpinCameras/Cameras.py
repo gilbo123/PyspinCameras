@@ -662,23 +662,12 @@ class Camera:
         """
 
         try:
-            # Retrieve GenICam nodemap
-            node_map = self.cam.GetNodeMap()
-
-            # Retrieve the node from the nodemap
-            node_device_throughput_limit = PySpin.CIntegerPtr(
-                node_map.GetNode("DeviceThroughputLimit")
-            )
-
-            # Ensure the node is valid
-            if not PySpin.IsAvailable(
-                node_device_throughput_limit
-            ) or not PySpin.IsWritable(node_device_throughput_limit):
+            if self.cam.DeviceLinkThroughputLimit.GetAccessMode() != PySpin.RW:
                 print("Unable to set device throughput limit. Aborting...")
                 return False
 
-            # Set the value
-            node_device_throughput_limit.SetValue(limit)
+            # Set the value of the device throughput limit
+            self.cam.DeviceLinkThroughputLimit.SetValue(limit)
 
             # success
             return True
