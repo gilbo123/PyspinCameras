@@ -609,6 +609,44 @@ class Camera:
             print("Error: %s" % ex)
             return False
 
+    ###################
+    ### PACKET SIZE ###
+    ###################
+
+    def set_packet_size(self, packet_size: int = 9000) -> bool:
+        """
+        Set the packet size for the camera.
+
+        :param packet_size: Packet size to set.
+        :type packet_size: int
+        :return: True if successful, False otherwise
+        :rtype: bool
+        """
+
+        try:
+            # Retrieve GenICam nodemap
+            node_map = self.cam.GetNodeMap()
+
+            # Retrieve the node from the nodemap
+            node_packet_size = PySpin.CIntegerPtr(node_map.GetNode("GevSCPSPacketSize"))
+
+            # Ensure the node is valid
+            if not PySpin.IsAvailable(node_packet_size) or not PySpin.IsWritable(
+                node_packet_size
+            ):
+                print("Unable to set packet size. Aborting...")
+                return False
+
+            # Set the value
+            node_packet_size.SetValue(packet_size)
+
+            # success
+            return True
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
+
     #################
     ### SERIAL NO ###
     #################
