@@ -609,6 +609,64 @@ class Camera:
             print("Error: %s" % ex)
             return False
 
+    ###################
+    ### PACKET SIZE ###
+    ###################
+
+    def set_packet_size(self, packet_size: int = 9000) -> bool:
+        """
+        Set the packet size for the camera.
+
+        :param packet_size: Packet size to set.
+        :type packet_size: int
+        :return: True if successful, False otherwise
+        :rtype: bool
+        """
+
+        try:
+            if self.cam.GevSCPSPacketSize.GetAccessMode() != PySpin.RW:
+                print("Unable to set packet size. Aborting...")
+                return False
+
+            # Set the value of the packet size
+            self.cam.GevSCPSPacketSize.SetValue(packet_size)
+
+            # success
+            return True
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
+
+    ###############################
+    ### DEVICE THROUGHPUT LIMIT ###
+    ###############################
+
+    def set_device_throughput_limit(self, limit: int = 150000000) -> bool:
+        """
+        Set the device throughput limit for the camera.
+
+        :param limit: Throughput limit to set.
+        :type limit: int
+        :return: True if successful, False otherwise
+        :rtype: bool
+        """
+
+        try:
+            if self.cam.DeviceLinkThroughputLimit.GetAccessMode() != PySpin.RW:
+                print("Unable to set device throughput limit. Aborting...")
+                return False
+
+            # Set the value of the device throughput limit
+            self.cam.DeviceLinkThroughputLimit.SetValue(limit)
+
+            # success
+            return True
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
+
     #################
     ### SERIAL NO ###
     #################
