@@ -317,7 +317,7 @@ class SaveVideoGstreamer:
             pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
                 f"video/x-raw,format=RGB,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
-                f"videoconvert ! x264enc ! h264parse ! mp4mux ! "
+                f"videoconvert ! x265enc ! h265parse ! mp4mux ! "
                 f"filesink location={save_folder}/{vid_name}"
             )
 
@@ -325,7 +325,16 @@ class SaveVideoGstreamer:
             pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
                 f"video/x-raw,format=RGB,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
-                f"videoconvert ! nvvidconv ! nvv4l2h264enc ! h264parse ! mp4mux ! "
+                f"videoconvert ! nvvidconv ! nvv4l2h265enc ! h265parse ! mp4mux ! "
+                f"filesink location={save_folder}/{vid_name}"
+            )
+
+        elif video_pipeline == "nvenc-bayer":
+            pipeline_str = (
+                f"appsrc name=source is-live=true format=time !"
+                f"video/x-bayer,format=rggb,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
+                f"bayer2rgb !"
+                f"videoconvert ! nvvidconv ! nvv4l2h265enc ! h265parse ! matroskamux ! "
                 f"filesink location={save_folder}/{vid_name}"
             )
 

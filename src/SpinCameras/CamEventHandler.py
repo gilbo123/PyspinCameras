@@ -31,6 +31,22 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
 
         nodemap = cam.GetTLDeviceNodeMap()
 
+        # Retrieve Current Pixel Format
+        node_pixel_format = PySpin.CEnumerationPtr(nodemap.GetNode("PixelFormat"))
+        if PySpin.IsAvailable(node_pixel_format) and PySpin.IsReadable(
+            node_pixel_format
+        ):
+            pixel_format = node_pixel_format.GetCurrentEntry()
+            if PySpin.IsAvailable(pixel_format) and PySpin.IsReadable(pixel_format):
+                print(f"Pixel format: {pixel_format.GetDisplayName()}")
+
+        if cam.PixelFormat.GetAccessMode() != PySpin.RW:
+            print("Unable to read pixel format using BGR8")
+            self.pf = PySpin.PixelFormat_BGR8
+        else:
+            self.pf = cam.PixelFormat
+            print(f"Pixel Colour Processing Format: {self.pf.GetSymbolic()}")
+
         # Retrieve device serial number
         node_device_serial_number = PySpin.CStringPtr(
             nodemap.GetNode("DeviceSerialNumber")
@@ -85,9 +101,9 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
             #     % (self._image_count, image.GetWidth(), image.GetHeight())
             # )
 
-            # Convert to mono8
+            # Convert image colour format
             image_converted: PySpin.ImagePtr = self._processor.Convert(
-                image, PySpin.PixelFormat_RGB8
+                image, self.pf  # PySpin.PixelFormat_BayerRG8
             )
 
             # Create unique filename and save image
