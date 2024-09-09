@@ -5,11 +5,46 @@ from datetime import datetime
 from os.path import isdir
 from queue import Queue
 from time import sleep
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Literal
 
 import PySpin
 
 from SpinCameras.CamEventHandler import CamImageEventHandler
+
+PixelFormat = Literal[
+    "Mono8",
+    "Mono16",
+    "BayerGR8",
+    "BayerRG8",
+    "BayerGB8",
+    "BayerBG8",
+    "BayerGR16",
+    "BayerRG16",
+    "BayerGB16",
+    "BayerBG16",
+    "RGB8",
+    "BGR8",
+    "YUV422_8" "YUV444_Packed",
+    "YUV422_Packed",
+    "YUV411_Packed",
+    "YUV422_YUYV_Packed",
+]
+
+PIXEL_FORMAT_MAP = {
+    "Mono8": PySpin.PixelFormat_Mono8,
+    "Mono16": PySpin.PixelFormat_Mono16,
+    "BayerGR8": PySpin.PixelFormat_BayerGR8,
+    "BayerRG8": PySpin.PixelFormat_BayerRG8,
+    "BayerGB8": PySpin.PixelFormat_BayerGB8,
+    "BayerBG8": PySpin.PixelFormat_BayerBG8,
+    "BayerGR16": PySpin.PixelFormat_BayerGR16,
+    "BayerRG16": PySpin.PixelFormat_BayerRG16,
+    "BayerGB16": PySpin.PixelFormat_BayerGB16,
+    "BayerBG16": PySpin.PixelFormat_BayerBG16,
+    "RGB8": PySpin.PixelFormat_RGB8,
+    "BGR8": PySpin.PixelFormat_BGR8,
+    "YUV422_8": PySpin.PixelFormat_YUV422_8,
+}
 
 
 @dataclass
@@ -659,6 +694,39 @@ class Camera:
 
             # Set the value of the device throughput limit
             self.cam.DeviceLinkThroughputLimit.SetValue(limit)
+
+            # success
+            return True
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
+
+    ####################
+    ### PIXEL FORMAT ###
+    ####################
+
+    def set_pixel_format(
+        self,
+        pixel_format: PySpin.IEnumerationT_PixelFormatEnums = PySpin.PixelFormat_BayerRG8,
+    ) -> bool:
+        """
+        Set the pixel format for the camera.
+
+        :param pixel_format: Pixel format to set.
+        :type pixel_format: PySpin.IEnumerationT_PixelFormatEnums (e.g. PySpin.PixelFormat_Mono8, PySpin.PixelFormat_RGB8, etc.)
+        :return: True if successful, False otherwise
+        :rtype: bool
+        """
+
+        try:
+            if self.cam.PixelFormat.GetAccessMode() != PySpin.RW:
+                print("Unable to set pixel format. Aborting...")
+                return False
+
+            # Set the value of the pixel format
+
+            self.cam.PixelFormat.SetValue(pixel_format)
 
             # success
             return True
