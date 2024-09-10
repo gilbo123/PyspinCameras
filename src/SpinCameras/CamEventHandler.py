@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import Callable, Optional, Tuple
 
 import PySpin
-from numpy import ndarray
+
+# from numpy import ndarray
 
 
 class CamImageEventHandler(PySpin.ImageEventHandler):
@@ -36,8 +37,9 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
             print("Unable to read pixel format using BGR8")
             self.pf = PySpin.PixelFormat_BGR8
         else:
-            self.pf = cam.PixelFormat.GetCurrentEntry()
-            print(f"Pixel Colour Processing Format: {self.pf.GetSymbolic()}")
+            pf = cam.PixelFormat.GetCurrentEntry()
+            self.pix_for = cam.PixelFormat.GetValue()
+            print(f"Pixel Colour Processing Format: {pf.GetSymbolic()}")
 
         # Retrieve device serial number
         node_device_serial_number = PySpin.CStringPtr(
@@ -95,7 +97,7 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
 
             # Convert image colour format
             image_converted: PySpin.ImagePtr = self._processor.Convert(
-                image, self.pf  # PySpin.PixelFormat_BayerRG8
+                image, self.pix_for  # PySpin.PixelFormat_BayerRG8
             )
 
             # Create unique filename and save image

@@ -314,7 +314,7 @@ class SaveVideoGstreamer:
 
         # Define the pipeline
         if video_pipeline == "default":
-            pipeline_str = (
+            self.pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
                 f"video/x-raw,format=RGB,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
                 f"videoconvert ! x265enc ! h265parse ! mp4mux ! "
@@ -322,7 +322,7 @@ class SaveVideoGstreamer:
             )
 
         elif video_pipeline == "bayer":
-            pipeline_str = (
+            self.pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
                 f"video/x-bayer,format=rggb,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
                 f"bayer2rgb ! "
@@ -331,7 +331,7 @@ class SaveVideoGstreamer:
             )
 
         elif video_pipeline == "nvenc":
-            pipeline_str = (
+            self.pipeline_str = (
                 f"appsrc name=source is-live=true format=time ! "
                 f"video/x-raw,format=RGB,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
                 f"videoconvert ! nvvidconv ! nvv4l2h265enc ! h265parse ! mp4mux ! "
@@ -339,7 +339,7 @@ class SaveVideoGstreamer:
             )
 
         elif video_pipeline == "nvenc-bayer":
-            pipeline_str = (
+            self.pipeline_str = (
                 f"appsrc name=source is-live=true format=time !"
                 f"video/x-bayer,format=rggb,width={image_size[0]},height={image_size[1]},framerate={fps}/1 ! "
                 f"bayer2rgb !"
@@ -348,10 +348,10 @@ class SaveVideoGstreamer:
             )
 
         else:
-            pipeline_str = video_pipeline
+            self.pipeline_str = video_pipeline
 
         # Create the pipeline
-        self.pipeline = Gst.parse_launch(pipeline_str)
+        self.pipeline = Gst.parse_launch(self.pipeline_str)
         self.appsrc = self.pipeline.get_by_name("source")
 
         # Configure appsrc
@@ -374,8 +374,12 @@ class SaveVideoGstreamer:
         """
         image_data = image_converted.GetNDArray()
 
-        if image_data.shape[2] != 3:
-            raise ValueError("Image must be in BGR format")
+        if "bayer" in self.pipeline_str:
+            if len(image_data.shape) != 2:
+                raise ValueError("Image must be in Bayer format (2 dimensions)")
+        else:
+            if image_data.shape[2] != 3:
+                raise ValueError("Image must be in BGR format (3 channels)")
 
         buffer = Gst.Buffer.new_wrapped(image_data.tobytes())
 
