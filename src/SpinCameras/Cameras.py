@@ -724,12 +724,37 @@ class Camera:
                 print("Unable to set pixel format. Aborting...")
                 return False
 
-            # Set the value of the pixel format
+            ### Check to see if the desired pixel format is supported ###
 
-            self.cam.PixelFormat.SetValue(pixel_format)
+            if PySpin.IsAvailable(pixel_format) and PySpin.IsWritable(pixel_format):
+                # Write the pixel format to the camera
+                self.cam.PixelFormat.SetValue(pixel_format)
 
-            # success
-            return True
+                # Success
+                return True
+
+            elif not PySpin.IsAvailable(pixel_format) or not PySpin.IsWritable(
+                pixel_format
+            ):
+                print("Pixel format not available.")
+
+                # Get all entries
+                entries = self.cam.PixelFormat.GetEntries()
+
+                # list for available pixel formats
+                available_pixel_formats = []
+
+                for entry in entries:
+                    if PySpin.IsAvailable(entry):
+                        available_pixel_formats.append(entry.GetDisplayName())
+
+                print(f"Available pixel formats are: {available_pixel_formats}")
+
+                return False
+
+            else:
+                print("Error setting pixel format.")
+                return False
 
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
