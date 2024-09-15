@@ -11,40 +11,40 @@ import PySpin
 
 from SpinCameras.CamEventHandler import CamImageEventHandler
 
-PixelFormat = Literal[
-    "Mono8",
-    "Mono16",
-    "BayerGR8",
-    "BayerRG8",
-    "BayerGB8",
-    "BayerBG8",
-    "BayerGR16",
-    "BayerRG16",
-    "BayerGB16",
-    "BayerBG16",
-    "RGB8",
-    "BGR8",
-    "YUV422_8" "YUV444_Packed",
-    "YUV422_Packed",
-    "YUV411_Packed",
-    "YUV422_YUYV_Packed",
-]
+# PixelFormat = Literal[
+#     "Mono8",
+#     "Mono16",
+#     "BayerGR8",
+#     "BayerRG8",
+#     "BayerGB8",
+#     "BayerBG8",
+#     "BayerGR16",
+#     "BayerRG16",
+#     "BayerGB16",
+#     "BayerBG16",
+#     "RGB8",
+#     "BGR8",
+#     "YUV422_8" "YUV444_Packed",
+#     "YUV422_Packed",
+#     "YUV411_Packed",
+#     "YUV422_YUYV_Packed",
+# ]
 
-PIXEL_FORMAT_MAP = {
-    "Mono8": PySpin.PixelFormat_Mono8,
-    "Mono16": PySpin.PixelFormat_Mono16,
-    "BayerGR8": PySpin.PixelFormat_BayerGR8,
-    "BayerRG8": PySpin.PixelFormat_BayerRG8,
-    "BayerGB8": PySpin.PixelFormat_BayerGB8,
-    "BayerBG8": PySpin.PixelFormat_BayerBG8,
-    "BayerGR16": PySpin.PixelFormat_BayerGR16,
-    "BayerRG16": PySpin.PixelFormat_BayerRG16,
-    "BayerGB16": PySpin.PixelFormat_BayerGB16,
-    "BayerBG16": PySpin.PixelFormat_BayerBG16,
-    "RGB8": PySpin.PixelFormat_RGB8,
-    "BGR8": PySpin.PixelFormat_BGR8,
-    "YUV422_8": PySpin.PixelFormat_YUV422_8,
-}
+# PIXEL_FORMAT_MAP = {
+#     "Mono8": PySpin.PixelFormat_Mono8,
+#     "Mono16": PySpin.PixelFormat_Mono16,
+#     "BayerGR8": PySpin.PixelFormat_BayerGR8,
+#     "BayerRG8": PySpin.PixelFormat_BayerRG8,
+#     "BayerGB8": PySpin.PixelFormat_BayerGB8,
+#     "BayerBG8": PySpin.PixelFormat_BayerBG8,
+#     "BayerGR16": PySpin.PixelFormat_BayerGR16,
+#     "BayerRG16": PySpin.PixelFormat_BayerRG16,
+#     "BayerGB16": PySpin.PixelFormat_BayerGB16,
+#     "BayerBG16": PySpin.PixelFormat_BayerBG16,
+#     "RGB8": PySpin.PixelFormat_RGB8,
+#     "BGR8": PySpin.PixelFormat_BGR8,
+#     "YUV422_8": PySpin.PixelFormat_YUV422_8,
+# }
 
 
 @dataclass
@@ -725,35 +725,28 @@ class Camera:
                 return False
 
             ### Check to see if the desired pixel format is supported ###
+            # Get all entries
+            entries = self.cam.PixelFormat.GetEntries()
+            
+            # check the pixel format is less than the number of entries
+            if pixel_format >= len(entries):
+                print(f"Pixel format 'ID:{pixel_format}' not available.")
+                return False
 
-            if PySpin.IsAvailable(pixel_format) and PySpin.IsWritable(pixel_format):
+            # check if pixe_format is in entries
+            if PySpin.IsAvailable(entries[pixel_format]):
                 # Write the pixel format to the camera
                 self.cam.PixelFormat.SetValue(pixel_format)
-
-                # Success
                 return True
-
-            elif not PySpin.IsAvailable(pixel_format) or not PySpin.IsWritable(
-                pixel_format
-            ):
-                print("Pixel format not available.")
-
-                # Get all entries
-                entries = self.cam.PixelFormat.GetEntries()
-
-                # list for available pixel formats
+            else:
                 available_pixel_formats = []
-
                 for entry in entries:
                     if PySpin.IsAvailable(entry):
                         available_pixel_formats.append(entry.GetDisplayName())
-
+                
+                print(f"Pixel format {entries[pixel_format].GetDisplayName()} not available.")
                 print(f"Available pixel formats are: {available_pixel_formats}")
 
-                return False
-
-            else:
-                print("Error setting pixel format.")
                 return False
 
         except PySpin.SpinnakerException as ex:
