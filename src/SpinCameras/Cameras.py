@@ -765,23 +765,39 @@ class Camera:
         :rtype: str
         """
 
-        try:
-            device_serial_number: str = "Error"
-            # Retrieve device serial number for filename
-            node_device_serial_number = PySpin.CStringPtr(
-                self.cam.GetTLDeviceNodeMap().GetNode("DeviceSerialNumber")
-            )
-            if PySpin.IsReadable(node_device_serial_number):
-                device_serial_number = node_device_serial_number.GetValue()
-            else:
-                print("Device serial number not available.")
-
-            # serial number or error
-            return device_serial_number
-
+        device_serial_number: str = "Error"
+        
+        try:    
+            # try to return the serial number
+            return self.cam.DeviceSerialNumber.GetValue()   
+            
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return device_serial_number
+
+
+    ###################
+    ### DEVICE NAME ###
+    ###################
+
+    def get_device_name(self) -> str:
+        """
+        Return the device name.
+
+        :return: Device name.
+        :rtype: str
+        """
+
+        device_name: str = "Error"
+        
+        try:    
+            # try to return the device name
+            return self.cam.DeviceModelName.GetValue()   
+            
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return device_name
+        
 
     ###################
     ### TEMPERATURE ###
@@ -875,6 +891,10 @@ class Cameras:
         :rtype: list[Camera]
         """
 
+        # initialise iterations counter for zero cameras
+        self.__iter_counter: int = 0
+        self.__iter_end: int = 0
+        
         # check folder
         if self.save_folder is not None:
             if not isdir(self.save_folder):
@@ -915,8 +935,7 @@ class Cameras:
             PySpin.SPINNAKER_COLOR_PROCESSING_ALGORITHM_HQ_LINEAR
         )
 
-        # iterations counter
-        self.__iter_counter: int = 0
+        # update iteration counter
         self.__iter_end: int = len(self.camera_list)
 
         # acquiring flag
