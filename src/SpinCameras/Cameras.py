@@ -84,14 +84,15 @@ class Camera:
         """
 
         device_serial_number: str = "Error"
-
-        try:
+        
+        try:    
             # try to return the serial number
-            return self.cam.DeviceSerialNumber.GetValue()
-
+            return self.cam.DeviceSerialNumber.GetValue()   
+            
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return device_serial_number
+
 
     ###################
     ### DEVICE NAME ###
@@ -107,14 +108,15 @@ class Camera:
         """
 
         device_name: str = "Error"
-
-        try:
+        
+        try:    
             # try to return the device name
-            return self.cam.DeviceModelName.GetValue()
-
+            return self.cam.DeviceModelName.GetValue()   
+            
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return device_name
+        
 
     ###################
     ### TEMPERATURE ###
@@ -170,10 +172,12 @@ class Camera:
 
         return self.cam.IsStreaming()
 
+
     ########################
     ### INITIALISATION ###
     ########################
 
+    @property
     def initialise(self) -> bool:
         """
         Initialise the camera.
@@ -827,7 +831,7 @@ class Camera:
             ### Check to see if the desired pixel format is supported ###
             # Get all entries
             entries = self.cam.PixelFormat.GetEntries()
-
+            
             # check the pixel format is less than the number of entries
             if pixel_format >= len(entries):
                 print(f"Pixel format 'ID:{pixel_format}' not available.")
@@ -843,10 +847,8 @@ class Camera:
                 for entry in entries:
                     if PySpin.IsAvailable(entry):
                         available_pixel_formats.append(entry.GetDisplayName())
-
-                print(
-                    f"Pixel format {entries[pixel_format].GetDisplayName()} not available."
-                )
+                
+                print(f"Pixel format {entries[pixel_format].GetDisplayName()} not available.")
                 print(f"Available pixel formats are: {available_pixel_formats}")
 
                 return False
@@ -854,6 +856,7 @@ class Camera:
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return False
+
 
     ###############
     ### __DEL__ ###
@@ -899,7 +902,7 @@ class Cameras:
         # initialise iterations counter for zero cameras
         self.__iter_counter: int = 0
         self.__iter_end: int = 0
-
+        
         # check folder
         if self.save_folder is not None:
             if not isdir(self.save_folder):
