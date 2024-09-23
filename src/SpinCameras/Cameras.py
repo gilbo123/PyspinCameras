@@ -70,6 +70,106 @@ class Camera:
 
         return self.cam
 
+    #################
+    ### SERIAL NO ###
+    #################
+
+    @property
+    def serial_number(self) -> str:
+        """
+        Return the serial number of this device.
+
+        :return: Serial number of the device.
+        :rtype: str
+        """
+
+        device_serial_number: str = "Error"
+
+        try:
+            # try to return the serial number
+            return self.cam.DeviceSerialNumber.GetValue()
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return device_serial_number
+
+    ###################
+    ### DEVICE NAME ###
+    ###################
+
+    @property
+    def device_name(self) -> str:
+        """
+        Return the device name.
+
+        :return: Device name.
+        :rtype: str
+        """
+
+        device_name: str = "Error"
+
+        try:
+            # try to return the device name
+            return self.cam.DeviceModelName.GetValue()
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return device_name
+
+    ###################
+    ### TEMPERATURE ###
+    ###################
+
+    @property
+    def device_temperature(self) -> float:
+        """
+        Return the temperature of the device.
+
+        :return: Temperature of the device.
+        :rtype: float
+        """
+
+        try:
+            # set the device temp after capture
+            temp = PySpin.CFloatPtr(
+                self.cam.GetNodeMap().GetNode("DeviceTemperature")
+            ).GetValue()
+            return temp
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return -1.0
+
+    ######################
+    ### IS_INITIALISED ###
+    ######################
+
+    @property
+    def is_initialised(self) -> bool:
+        """
+        Check if the camera is initialised.
+
+        :return: True if initialised, False otherwise
+        :rtype: bool
+        """
+
+        return self.cam.IsInitialized()
+
+    ####################
+    ### IS_STREAMING ###
+    ####################
+
+    @property
+    def is_streaming(self) -> bool:
+        """
+        Check if the camera is streaming.
+
+        :return: True if streaming, False otherwise
+        :rtype: bool
+        """
+
+        return self.cam.IsStreaming()
+
     ########################
     ### INITIALISATION ###
     ########################
@@ -727,7 +827,7 @@ class Camera:
             ### Check to see if the desired pixel format is supported ###
             # Get all entries
             entries = self.cam.PixelFormat.GetEntries()
-            
+
             # check the pixel format is less than the number of entries
             if pixel_format >= len(entries):
                 print(f"Pixel format 'ID:{pixel_format}' not available.")
@@ -743,8 +843,10 @@ class Camera:
                 for entry in entries:
                     if PySpin.IsAvailable(entry):
                         available_pixel_formats.append(entry.GetDisplayName())
-                
-                print(f"Pixel format {entries[pixel_format].GetDisplayName()} not available.")
+
+                print(
+                    f"Pixel format {entries[pixel_format].GetDisplayName()} not available."
+                )
                 print(f"Available pixel formats are: {available_pixel_formats}")
 
                 return False
@@ -752,103 +854,6 @@ class Camera:
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return False
-
-    #################
-    ### SERIAL NO ###
-    #################
-
-    def get_serial_number(self) -> str:
-        """
-        Return the serial number of this device.
-
-        :return: Serial number of the device.
-        :rtype: str
-        """
-
-        device_serial_number: str = "Error"
-        
-        try:    
-            # try to return the serial number
-            return self.cam.DeviceSerialNumber.GetValue()   
-            
-        except PySpin.SpinnakerException as ex:
-            print("Error: %s" % ex)
-            return device_serial_number
-
-
-    ###################
-    ### DEVICE NAME ###
-    ###################
-
-    def get_device_name(self) -> str:
-        """
-        Return the device name.
-
-        :return: Device name.
-        :rtype: str
-        """
-
-        device_name: str = "Error"
-        
-        try:    
-            # try to return the device name
-            return self.cam.DeviceModelName.GetValue()   
-            
-        except PySpin.SpinnakerException as ex:
-            print("Error: %s" % ex)
-            return device_name
-        
-
-    ###################
-    ### TEMPERATURE ###
-    ###################
-
-    def get_device_temperature(self) -> float:
-        """
-        Return the temperature of the device.
-
-        :return: Temperature of the device.
-        :rtype: float
-        """
-
-        try:
-            # set the device temp after capture
-            temp = PySpin.CFloatPtr(
-                self.cam.GetNodeMap().GetNode("DeviceTemperature")
-            ).GetValue()
-            return temp
-
-        except PySpin.SpinnakerException as ex:
-            print("Error: %s" % ex)
-            return -1.0
-
-    ######################
-    ### IS_INITIALISED ###
-    ######################
-
-    def is_initialised(self) -> bool:
-        """
-        Check if the camera is initialised.
-
-        :return: True if initialised, False otherwise
-        :rtype: bool
-        """
-
-        return self.cam.IsInitialized()
-
-    ####################
-    ### IS_STREAMING ###
-    ####################
-
-    def is_streaming(self) -> bool:
-        """
-        Check if the camera is streaming.
-
-        :return: True if streaming, False otherwise
-        :rtype: bool
-        """
-
-        return self.cam.IsStreaming()
 
     ###############
     ### __DEL__ ###
@@ -894,7 +899,7 @@ class Cameras:
         # initialise iterations counter for zero cameras
         self.__iter_counter: int = 0
         self.__iter_end: int = 0
-        
+
         # check folder
         if self.save_folder is not None:
             if not isdir(self.save_folder):
