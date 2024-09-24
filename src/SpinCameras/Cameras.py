@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from os.path import isdir
 from queue import Queue
@@ -11,49 +11,32 @@ import PySpin
 
 from SpinCameras.CamEventHandler import CamImageEventHandler
 
-# PixelFormat = Literal[
-#     "Mono8",
-#     "Mono16",
-#     "BayerGR8",
-#     "BayerRG8",
-#     "BayerGB8",
-#     "BayerBG8",
-#     "BayerGR16",
-#     "BayerRG16",
-#     "BayerGB16",
-#     "BayerBG16",
-#     "RGB8",
-#     "BGR8",
-#     "YUV422_8" "YUV444_Packed",
-#     "YUV422_Packed",
-#     "YUV411_Packed",
-#     "YUV422_YUYV_Packed",
-# ]
-
-# PIXEL_FORMAT_MAP = {
-#     "Mono8": PySpin.PixelFormat_Mono8,
-#     "Mono16": PySpin.PixelFormat_Mono16,
-#     "BayerGR8": PySpin.PixelFormat_BayerGR8,
-#     "BayerRG8": PySpin.PixelFormat_BayerRG8,
-#     "BayerGB8": PySpin.PixelFormat_BayerGB8,
-#     "BayerBG8": PySpin.PixelFormat_BayerBG8,
-#     "BayerGR16": PySpin.PixelFormat_BayerGR16,
-#     "BayerRG16": PySpin.PixelFormat_BayerRG16,
-#     "BayerGB16": PySpin.PixelFormat_BayerGB16,
-#     "BayerBG16": PySpin.PixelFormat_BayerBG16,
-#     "RGB8": PySpin.PixelFormat_RGB8,
-#     "BGR8": PySpin.PixelFormat_BGR8,
-#     "YUV422_8": PySpin.PixelFormat_YUV422_8,
-# }
-
 
 @dataclass
 class Camera:
     """Camera object to control a Flir camera."""
 
     _cams: PySpin.CameraList
-    cam_index: int
+    _cam_index: int
 
+    def __repr__(self) -> str:
+        """
+        Return the camera serial number and model name.
+
+        :return: Camera serial number and model name.
+        :rtype: str
+        """
+
+        return (
+            "\nCamera(\n"
+            f"  Model: {self.device_model_name} (Serial: {self.device_serial_number})\n"
+            f"  Index: {self._cam_index + 1} (out of {len(self._cams)} cameras)\n"
+            f"  Temperature: {self.device_temperature:.2f}\u2103\n"
+            f"  Initialised: {self.is_initialised()}\n"
+            f"  Streaming: {self.is_streaming()}\n"
+            f"  Callback set: {self._callback_set}\n"
+            ")\n"
+        )
     def __post_init__(self) -> PySpin.CameraPtr:
         """
         Post initialisation function to get the camera based on the index.
@@ -63,60 +46,20 @@ class Camera:
         """
 
         # get the camera based on index
-        self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self.cam_index)
+        self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self._cam_index)
 
         # callback function flag
         self._callback_set: bool = False
 
+
+        # try to return the device name
+        self.cam.Init()
+        self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
+        self.device_model_name: str =  self.cam.DeviceModelName.GetValue()   
+        self.cam.DeInit()
+
         return self.cam
 
-    #################
-    ### SERIAL NO ###
-    #################
-
-    @property
-    def serial_number(self) -> str:
-        """
-        Return the serial number of this device.
-
-        :return: Serial number of the device.
-        :rtype: str
-        """
-
-        device_serial_number: str = "Error"
-        
-        try:    
-            # try to return the serial number
-            return self.cam.DeviceSerialNumber.GetValue()   
-            
-        except PySpin.SpinnakerException as ex:
-            print("Error: %s" % ex)
-            return device_serial_number
-
-
-    ###################
-    ### DEVICE NAME ###
-    ###################
-
-    @property
-    def device_name(self) -> str:
-        """
-        Return the device name.
-
-        :return: Device name.
-        :rtype: str
-        """
-
-        device_name: str = "Error"
-        
-        try:    
-            # try to return the device name
-            return self.cam.DeviceModelName.GetValue()   
-            
-        except PySpin.SpinnakerException as ex:
-            print("Error: %s" % ex)
-            return device_name
-        
 
     ###################
     ### TEMPERATURE ###
@@ -146,7 +89,6 @@ class Camera:
     ### IS_INITIALISED ###
     ######################
 
-    @property
     def is_initialised(self) -> bool:
         """
         Check if the camera is initialised.
@@ -161,7 +103,6 @@ class Camera:
     ### IS_STREAMING ###
     ####################
 
-    @property
     def is_streaming(self) -> bool:
         """
         Check if the camera is streaming.
@@ -177,7 +118,6 @@ class Camera:
     ### INITIALISATION ###
     ########################
 
-    @property
     def initialise(self) -> bool:
         """
         Initialise the camera.
@@ -891,6 +831,29 @@ class Cameras:
     grab_timeout: int = 5000
     verbose: bool = True
 
+    def __repr__(self) -> str:
+        """
+        Return the number of cameras detected.
+
+        :return: Number of cameras and their breif details.
+        :rtype: str
+        """
+
+        # make a string wi the model and serial of each camera detected
+        camera_details: str = ""
+        for i, cam in enumerate(self.camera_list):
+            camera_details += f"\n      Camera {i + 1} of {len(self.camera_list)} - Model: {cam.device_model_name} ({cam.device_serial_number})\n"
+
+        return (
+            "\nCameras(\n"
+            f"  Spinnaker version: {self.spinnaker_version}\n"
+            f"  Number of cameras detected: {len(self.camera_list)}\n"
+            f"  Save folder: {self.save_folder}\n"
+            f"  Queue: {True if self.queue is not None else False}\n"
+            f"  Camera details: {camera_details}"
+            ")\n"
+        )
+
     def __post_init__(self) -> list[Camera]:
         """
         Gets all the cameras attached and returns a list of Cameras, otherwise an empty list.
@@ -933,7 +896,7 @@ class Cameras:
 
         # Create camera object for each camera
         for i in range(len(self._cams)):
-            self.camera_list.append(Camera(_cams=self._cams, cam_index=i))
+            self.camera_list.append(Camera(_cams=self._cams, _cam_index=i))
 
         # Create ImageProcessor instance for post processing images
         self.processor = PySpin.ImageProcessor()
@@ -948,6 +911,15 @@ class Cameras:
 
         # acquiring flag
         self.acquiring: bool = False
+
+        # set the library version
+        spin_version: PySpin.LibraryVersion = self.system.GetLibraryVersion()
+        self.spinnaker_version: str = (
+            f"{spin_version.major}."
+            f"{spin_version.minor}."
+            f"{spin_version.type}."
+            f"{spin_version.build}"
+        )
 
         return self.camera_list
 
@@ -966,6 +938,22 @@ class Cameras:
 
     def __len__(self) -> int:
         return len(self.camera_list)
+    
+    def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
+        """
+        Get the camera object by serial number.
+
+        :param serial: Serial number of the camera.
+        :type serial: str
+        :return: Camera object if found, None otherwise
+        :rtype: Optional[Camera]
+        """
+
+        for cam in self.camera_list:
+            if cam.device_serial_number == serial:
+                return cam
+
+        return None
 
     def initialise_cameras(self) -> None:
         """

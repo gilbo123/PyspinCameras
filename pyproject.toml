@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SpinCameras"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name = "Gilbert Eaton", email = "gilberteaton@gmal.com" },
   { name = "Jonathon Holder", email = "jonathon.holder.90@gmail.com" },
