@@ -6,10 +6,13 @@ from os.path import isdir
 from queue import Queue
 from time import sleep
 from typing import Any, Callable, Optional, Literal
+from asyncio import sleep as async_sleep
+from asyncio import gather as async_gather
+from asyncio import run as async_run
 
 import PySpin
 
-from SpinCameras.CamEventHandler import CamImageEventHandler
+from CamEventHandler import CamImageEventHandler
 
 
 @dataclass
@@ -206,6 +209,34 @@ class Camera:
     ### CALLBACK_FUNCTION ###
     #########################
 
+    ##############################   
+    ### GRAB AND CONVERT IMAGE ###
+    ##############################
+
+    def get_next_image(self) -> PySpin.ImagePtr | None:
+        """
+        Grab an image and convert it to RGB24 format.
+
+        :return: ImagePtr if successful, None otherwise
+        :rtype: PySpin.ImagePtr
+        """
+
+        try:
+            # Retrieve next received image
+            image_result: PySpin.ImagePtr = self.cam.GetNextImage()
+
+            # Ensure image completion
+            if image_result.IsIncomplete():
+                print("Image incomplete with image status %d..." % image_result.GetImageStatus())
+                return None
+
+            return image_result
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return None
+
+
     def set_callback_function(self, func: Callable) -> bool:
         """
         Set the callback function for the camera.
@@ -218,7 +249,10 @@ class Camera:
 
         # set the image callback function, if required
         # TODO - check parameters match. Protocol??
-
+        if not callable(func):
+            print("Callback function not callable.")
+            return False
+        
         # create the event handler - with the defined function
         self.event_handler: CamImageEventHandler = CamImageEventHandler(
             cam=self.cam, callback=func
@@ -232,6 +266,32 @@ class Camera:
         self._callback_set = True if res else False
 
         return res
+    
+    ################################
+    ### EXECUTE SOFTWARE TRIGGER ###
+    ################################
+    
+    def execute_software_trigger(self) -> bool:
+        """
+        Send a software trigger to the camera using asyncio. 
+        Delay before trigger in seconds.
+
+        :return: True if successful, False otherwise
+        :rtype: bool
+        """
+        try:
+            # Trigger the camera
+            self.cam.TriggerSoftware.Execute()
+            sleep(2)
+            print("Software trigger executed.")
+            return True
+        
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
+
+        # success
+        return True
 
     ########################
     ### ACQUISITION_MODE ###
@@ -596,7 +656,7 @@ class Camera:
             return False
 
     ################
-    ### TRIGGER ###
+    ### TRIGGER ####
     ################
 
     def set_trigger_mode(
@@ -665,11 +725,12 @@ class Camera:
                 else:
                     print(f"Trigger source {line} not recognised.")
                     return False
+                print(f"Hardware trigger set on line {line}.")
 
             # set the software trigger
             elif source == "software":
                 self.cam.TriggerSource.SetValue(PySpin.TriggerSource_Software)
-
+                print("Software trigger set.")
             else:
                 print(
                     f"Trigger source {source} not recognised. use '`hardware`' or '`software`'."
@@ -938,6 +999,9 @@ class Cameras:
 
     def __len__(self) -> int:
         return len(self.camera_list)
+    
+    def __getitem__(self, index: int) -> Camera:
+        return self.camera_list[index]
     
     def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
         """

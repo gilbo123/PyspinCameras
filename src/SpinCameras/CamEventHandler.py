@@ -33,13 +33,13 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
         nodemap = cam.GetTLDeviceNodeMap()
 
         # Retrieve Current pixel format
-        if cam.PixelFormat.GetAccessMode() != PySpin.RW:
-            print("Unable to read pixel format using BGR8")
-            self.pf = PySpin.PixelFormat_BGR8
-        else:
-            pf = cam.PixelFormat.GetCurrentEntry()
-            self.pix_for = cam.PixelFormat.GetValue()
-            print(f"Pixel Colour Processing Format: {pf.GetSymbolic()}")
+        # if cam.PixelFormat.GetAccessMode() != PySpin.RW:
+        #     self.pix_for = PySpin.PixelFormat_BGR8
+        #     print("Unable to read pixel format, using BGR8")
+        # else:
+        pf = cam.PixelFormat.GetCurrentEntry()
+        self.pix_for = cam.PixelFormat.GetValue()
+        print(f"Event Handler - Pixel Colour Processing Format: {pf.GetSymbolic()}")
 
         # Retrieve device serial number
         node_device_serial_number = PySpin.CStringPtr(
@@ -112,7 +112,7 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
 
             ### CALLBACK FUNCTION ###
             self.callback(image_converted, filename)
-
+            
             # Increment image counter
             self._image_count += 1
 
