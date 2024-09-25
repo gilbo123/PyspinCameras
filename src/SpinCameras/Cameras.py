@@ -1,17 +1,16 @@
 from __future__ import annotations
 
+from asyncio import gather as async_gather
+from asyncio import run as async_run
+from asyncio import sleep as async_sleep
 from dataclasses import dataclass, field
 from datetime import datetime
 from os.path import isdir
 from queue import Queue
 from time import sleep
-from typing import Any, Callable, Optional, Literal
-from asyncio import sleep as async_sleep
-from asyncio import gather as async_gather
-from asyncio import run as async_run
+from typing import Any, Callable, Literal, Optional
 
 import PySpin
-
 from CamEventHandler import CamImageEventHandler
 
 
@@ -40,6 +39,7 @@ class Camera:
             f"  Callback set: {self._callback_set}\n"
             ")\n"
         )
+
     def __post_init__(self) -> PySpin.CameraPtr:
         """
         Post initialisation function to get the camera based on the index.
@@ -54,15 +54,13 @@ class Camera:
         # callback function flag
         self._callback_set: bool = False
 
-
         # try to return the device name
         self.cam.Init()
         self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
-        self.device_model_name: str =  self.cam.DeviceModelName.GetValue()   
+        self.device_model_name: str = self.cam.DeviceModelName.GetValue()
         self.cam.DeInit()
 
         return self.cam
-
 
     ###################
     ### TEMPERATURE ###
@@ -115,7 +113,6 @@ class Camera:
         """
 
         return self.cam.IsStreaming()
-
 
     ########################
     ### INITIALISATION ###
@@ -209,7 +206,7 @@ class Camera:
     ### CALLBACK_FUNCTION ###
     #########################
 
-    ##############################   
+    ##############################
     ### GRAB AND CONVERT IMAGE ###
     ##############################
 
@@ -227,7 +224,10 @@ class Camera:
 
             # Ensure image completion
             if image_result.IsIncomplete():
-                print("Image incomplete with image status %d..." % image_result.GetImageStatus())
+                print(
+                    "Image incomplete with image status %d..."
+                    % image_result.GetImageStatus()
+                )
                 return None
 
             return image_result
@@ -235,7 +235,6 @@ class Camera:
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return None
-
 
     def set_callback_function(self, func: Callable) -> bool:
         """
@@ -252,7 +251,7 @@ class Camera:
         if not callable(func):
             print("Callback function not callable.")
             return False
-        
+
         # create the event handler - with the defined function
         self.event_handler: CamImageEventHandler = CamImageEventHandler(
             cam=self.cam, callback=func
@@ -266,14 +265,14 @@ class Camera:
         self._callback_set = True if res else False
 
         return res
-    
+
     ################################
     ### EXECUTE SOFTWARE TRIGGER ###
     ################################
-    
+
     def execute_software_trigger(self) -> bool:
         """
-        Send a software trigger to the camera using asyncio. 
+        Send a software trigger to the camera using asyncio.
         Delay before trigger in seconds.
 
         :return: True if successful, False otherwise
@@ -285,7 +284,7 @@ class Camera:
             sleep(2)
             print("Software trigger executed.")
             return True
-        
+
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return False
@@ -832,7 +831,7 @@ class Camera:
             ### Check to see if the desired pixel format is supported ###
             # Get all entries
             entries = self.cam.PixelFormat.GetEntries()
-            
+
             # check the pixel format is less than the number of entries
             if pixel_format >= len(entries):
                 print(f"Pixel format 'ID:{pixel_format}' not available.")
@@ -848,8 +847,10 @@ class Camera:
                 for entry in entries:
                     if PySpin.IsAvailable(entry):
                         available_pixel_formats.append(entry.GetDisplayName())
-                
-                print(f"Pixel format {entries[pixel_format].GetDisplayName()} not available.")
+
+                print(
+                    f"Pixel format {entries[pixel_format].GetDisplayName()} not available."
+                )
                 print(f"Available pixel formats are: {available_pixel_formats}")
 
                 return False
@@ -857,7 +858,6 @@ class Camera:
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return False
-
 
     ###############
     ### __DEL__ ###
@@ -926,7 +926,7 @@ class Cameras:
         # initialise iterations counter for zero cameras
         self.__iter_counter: int = 0
         self.__iter_end: int = 0
-        
+
         # check folder
         if self.save_folder is not None:
             if not isdir(self.save_folder):
@@ -999,10 +999,10 @@ class Cameras:
 
     def __len__(self) -> int:
         return len(self.camera_list)
-    
+
     def __getitem__(self, index: int) -> Camera:
         return self.camera_list[index]
-    
+
     def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
         """
         Get the camera object by serial number.
@@ -1148,7 +1148,7 @@ class Cameras:
                         # Retrieve device serial number for filename
                         device_serial_number: str = self.camera_list[
                             i
-                        ].get_serial_number()
+                        ].device_serial_number
 
                         # Convert image to mono 8
                         image_converted: PySpin.ImagePtr = self.processor.Convert(

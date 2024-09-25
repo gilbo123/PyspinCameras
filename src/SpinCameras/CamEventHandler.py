@@ -95,10 +95,14 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
             #     % (self._image_count, image.GetWidth(), image.GetHeight())
             # )
 
-            # Convert image colour format
-            image_converted: PySpin.ImagePtr = self._processor.Convert(
-                image, self.pix_for  # PySpin.PixelFormat_BayerRG8
-            )
+            image_converted: PySpin.ImagePtr = image
+            try:
+                # Convert image colour format
+                image_converted = self._processor.Convert(
+                    image, self.pix_for  # PySpin.PixelFormat_BayerRG8
+                )
+            except:
+                pass
 
             # Create unique filename and save image
             dt: str = datetime.now().strftime("%Y-%m-%dT%H:%M:%S:%f")
@@ -112,7 +116,7 @@ class CamImageEventHandler(PySpin.ImageEventHandler):
 
             ### CALLBACK FUNCTION ###
             self.callback(image_converted, filename)
-            
+
             # Increment image counter
             self._image_count += 1
 
