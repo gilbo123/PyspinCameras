@@ -1,1 +1,2 @@
+AcquisitionMultipleCamera
 SpinCameras

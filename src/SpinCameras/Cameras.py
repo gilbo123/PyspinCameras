@@ -11,7 +11,8 @@ from time import sleep
 from typing import Any, Callable, Literal, Optional
 
 import PySpin
-from CamEventHandler import CamImageEventHandler
+
+from SpinCameras.CamEventHandler import CamImageEventHandler
 
 
 @dataclass
@@ -281,7 +282,6 @@ class Camera:
         try:
             # Trigger the camera
             self.cam.TriggerSoftware.Execute()
-            sleep(2)
             print("Software trigger executed.")
             return True
 
