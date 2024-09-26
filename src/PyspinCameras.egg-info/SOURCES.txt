@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+src/PyspinCameras.egg-info/PKG-INFO
+src/PyspinCameras.egg-info/SOURCES.txt
+src/PyspinCameras.egg-info/dependency_links.txt
+src/PyspinCameras.egg-info/top_level.txt
+src/SpinCameras/Callbacks.py
+src/SpinCameras/CamEventHandler.py
+src/SpinCameras/Cameras.py
+src/SpinCameras/__init__.py

@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "SpinCameras"
-version = "0.0.3"
+name = "PyspinCameras"
+version = "0.0.4"
 authors = [
   { name = "Gilbert Eaton", email = "gilberteaton@gmal.com" },
   { name = "Jonathon Holder", email = "jonathon.holder.90@gmail.com" },
