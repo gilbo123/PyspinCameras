@@ -1,11 +1,9 @@
 LICENSE
 README.md
 pyproject.toml
-src/AcquisitionMultipleCamera.py
 src/SpinCameras/Callbacks.py
 src/SpinCameras/CamEventHandler.py
 src/SpinCameras/Cameras.py
-src/SpinCameras/SpinCameras_test.py
 src/SpinCameras/__init__.py
 src/SpinCameras.egg-info/PKG-INFO
 src/SpinCameras.egg-info/SOURCES.txt

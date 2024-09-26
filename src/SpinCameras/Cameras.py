@@ -12,7 +12,7 @@ from typing import Any, Callable, Literal, Optional
 
 import PySpin
 
-from SpinCameras.CamEventHandler import CamImageEventHandler
+from CamEventHandler import CamImageEventHandler
 
 
 @dataclass
@@ -903,7 +903,7 @@ class Cameras:
         # make a string wi the model and serial of each camera detected
         camera_details: str = ""
         for i, cam in enumerate(self.camera_list):
-            camera_details += f"\n      Camera {i + 1} of {len(self.camera_list)} - Model: {cam.device_model_name} ({cam.device_serial_number})\n"
+            camera_details += f"\n      Camera {i + 1} of {len(self.camera_list)} - Model: {cam.device_model_name} ({cam.device_serial_number})"
 
         return (
             "\nCameras(\n"
@@ -911,7 +911,7 @@ class Cameras:
             f"  Number of cameras detected: {len(self.camera_list)}\n"
             f"  Save folder: {self.save_folder}\n"
             f"  Queue: {True if self.queue is not None else False}\n"
-            f"  Camera details: {camera_details}"
+            f"  Camera details: {camera_details}\n"
             ")\n"
         )
 
@@ -922,6 +922,15 @@ class Cameras:
         :return: List of Camera objects
         :rtype: list[Camera]
         """
+
+        # set the library version
+        spin_version: PySpin.LibraryVersion = self.system.GetLibraryVersion()
+        self.spinnaker_version: str = (
+            f"{spin_version.major}."
+            f"{spin_version.minor}."
+            f"{spin_version.type}."
+            f"{spin_version.build}"
+        )
 
         # initialise iterations counter for zero cameras
         self.__iter_counter: int = 0
@@ -972,15 +981,6 @@ class Cameras:
 
         # acquiring flag
         self.acquiring: bool = False
-
-        # set the library version
-        spin_version: PySpin.LibraryVersion = self.system.GetLibraryVersion()
-        self.spinnaker_version: str = (
-            f"{spin_version.major}."
-            f"{spin_version.minor}."
-            f"{spin_version.type}."
-            f"{spin_version.build}"
-        )
 
         return self.camera_list
 
@@ -1125,6 +1125,8 @@ class Cameras:
                     # check if cam has a callback function
                     if self.camera_list[i]._callback_set:
                         sleep(0.1)
+                        if self.camera_list[i].image_event_handler.get_image_count() == _iter:
+                            self.acquiring = False
                         continue
 
                     # Retrieve next received image and ensure image completion
