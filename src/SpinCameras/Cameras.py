@@ -936,17 +936,17 @@ class Cameras:
         self.__iter_counter: int = 0
         self.__iter_end: int = 0
 
-        # check folder
-        if self.save_folder is not None:
-            if not isdir(self.save_folder):
-                print(f"Save folder {self.save_folder} not found. Exiting.")
-                exit()
-
         # the list of cameras to return
         self.camera_list: list[Camera] = []
 
         # Retrieve list of cameras from the system
         self._cams: PySpin.CameraList = self.system.GetCameras()
+
+        # check folder
+        if self.save_folder is not None:
+            if not isdir(self.save_folder):
+                print(f"Save folder {self.save_folder} not found. Exiting.")
+                exit()
 
         num_cameras = self._cams.GetSize()
         if self.verbose:
@@ -1085,7 +1085,8 @@ class Cameras:
         """
 
         # Clear camera list before releasing system
-        self._cams.Clear()
+        if self._cams:
+            self._cams.Clear()
         self.camera_list = []
 
     def acquire_images(self, num_images: int = -1) -> None:
