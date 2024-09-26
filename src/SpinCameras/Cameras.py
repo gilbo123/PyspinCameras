@@ -12,7 +12,7 @@ from typing import Any, Callable, Literal, Optional
 
 import PySpin
 
-from CamEventHandler import CamImageEventHandler
+from SpinCameras.CamEventHandler import CamImageEventHandler
 
 
 @dataclass
