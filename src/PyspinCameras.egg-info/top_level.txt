@@ -1,1 +1,2 @@
 SpinCameras
+SpinCameras_test

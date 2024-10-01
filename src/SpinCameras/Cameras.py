@@ -152,9 +152,9 @@ class Camera:
             if self.cam.IsInitialized():
                 # check image event registers
                 if self._callback_set:
-                    self.event_handler.reset_image_events(
-                        self.cam, self.image_event_handler
-                    )
+                    self.cam.UnregisterEventHandler(self.event_handler)
+                    # self.event_handler.reset_image_events(
+                    #     self.cam, self.image_event_handler
                 # ready to deinit
                 self.cam.DeInit()
                 return True
@@ -253,17 +253,31 @@ class Camera:
             print("Callback function not callable.")
             return False
 
-        # create the event handler - with the defined function
-        self.event_handler: CamImageEventHandler = CamImageEventHandler(
-            cam=self.cam, callback=func
-        )
-        # register the event handler
-        res, self.image_event_handler = self.event_handler.configure_image_events(
-            self.cam
-        )
+        try:
 
-        # set flag
-        self._callback_set = True if res else False
+            # create the event handler - with the defined function
+            self.event_handler: CamImageEventHandler = CamImageEventHandler(
+                cam=self.cam, callback=func
+            )
+
+            # register the event handler
+            self.cam.RegisterEventHandler(self.event_handler)
+            
+            # register the event handler
+            # res, self.image_event_handler = self.event_handler.configure_image_events(
+            #     self.cam
+            # )
+            # set flag
+            self._callback_set = True
+
+            # success
+            return True
+
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
+
 
         return res
 
@@ -1045,7 +1059,7 @@ class Cameras:
             # Initialize camera
             cam.deinitialise()
 
-    def begin_capture(self) -> None:
+    def _begin_capture(self) -> None:
         """
         Begin the acquisition for each camera and start capture.
         :return: None
@@ -1060,7 +1074,7 @@ class Cameras:
         # acquiring flag
         self.acquiring: bool = True
 
-    def stop_capture(self) -> None:
+    def _stop_capture(self) -> None:
         """
         Stop the acquisition for each camera.
 
@@ -1102,7 +1116,7 @@ class Cameras:
 
         try:
             # Prepare each camera to acquire images
-            self.begin_capture()
+            self._begin_capture()
 
             #######################################################
 
@@ -1113,22 +1127,27 @@ class Cameras:
                 _iter += 1
 
                 # check if we have enough images
-                if num_images != -1 and num_images == _iter:
+                if (num_images != -1 and num_images == _iter):
                     self.acquiring = False
-                    print(f"Acquired {num_images} images from each camera.")
+                    if self.verbose:
+                        print(f"Acquired {num_images} images from each camera.")
                     break
 
                 for i in range(len(self.camera_list)):
+                    # check if cam has a callback function
+                    if self.camera_list[i]._callback_set:
+                        # check number of images
+                        if self.camera_list[i].event_handler.get_image_count() == num_images:
+                            self.acquiring = False
+                            if self.verbose:
+                                print(f"HANDLER acquired {num_images} images from each camera.")
+                            break
+                        # wait for callback to be called
+                        sleep(0.1)
+                        continue
 
                     # get the handle to the raw camera for quick access
                     cam: PySpin.CameraPtr = self.camera_list[i].cam
-
-                    # check if cam has a callback function
-                    if self.camera_list[i]._callback_set:
-                        sleep(0.1)
-                        if self.camera_list[i].image_event_handler.get_image_count() == _iter:
-                            self.acquiring = False
-                        continue
 
                     # Retrieve next received image and ensure image completion
                     image_result: PySpin.ImagePtr = cam.GetNextImage()
@@ -1193,9 +1212,9 @@ class Cameras:
             self.acquiring = False
 
         # whatever happens, try to stop cameras
-        # finally:
-        #     # End acquisition for each camera
-        #     self.stop_capture()
+        finally:
+            # End acquisition for each camera
+            self._stop_capture()
 
     def __del__(self) -> None:
         """

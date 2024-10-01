@@ -1,6 +1,7 @@
 LICENSE
 README.md
 pyproject.toml
+src/SpinCameras_test.py
 src/PyspinCameras.egg-info/PKG-INFO
 src/PyspinCameras.egg-info/SOURCES.txt
 src/PyspinCameras.egg-info/dependency_links.txt
