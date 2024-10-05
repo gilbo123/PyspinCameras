@@ -174,8 +174,8 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Gilbert Eaton - [@mechatronicdoc](https://x.com/mechatronicdoc) - gilberteaton@gmail.com
-Jonathon Holder - [@]() - jonathon.holder.90@gmail.com
+* Gilbert Eaton - [@mechatronicdoc](https://x.com/mechatronicdoc) - gilberteaton@gmail.com
+* Jonathon Holder - [@]() - jonathon.holder.90@gmail.com
 
 Project Link: [https://github.com/gilbo123/BackgroundSpeedTest](https://github.com/gilbo123/BackgroundSpeedTest)
 
