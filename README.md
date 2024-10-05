@@ -24,7 +24,7 @@
   <h3 align="center">Pyspin Cameras</h3>
 
   <p align="center">
-    A simple server that runs in the background every 5 mins to test your internet speed and displays the results in a graph.
+    A simple wrapper for the PySpin library to allow for easy control of FLIR cameras.
     <br />
     <a href="https://github.com/gilbo123/PyspinCameras"><strong>Explore the docs »</strong></a>
     <br />
