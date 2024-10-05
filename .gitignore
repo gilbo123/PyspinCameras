@@ -15,9 +15,5 @@
 *.flv
 *.mov
 *.wmv
-*.jpg
-*.png
-*.jpeg
-*.xlsx
 
 **pycache**
