@@ -177,7 +177,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 * Gilbert Eaton - [@mechatronicdoc](https://x.com/mechatronicdoc) - gilberteaton@gmail.com
 * Jonathon Holder - [@]() - jonathon.holder.90@gmail.com
 
-Project Link: [https://github.com/gilbo123/BackgroundSpeedTest](https://github.com/gilbo123/BackgroundSpeedTest)
+Project Link: [https://github.com/gilbo123/PyspinCameras](https://github.com/gilbo123/PyspinCameras)
 
 
 
