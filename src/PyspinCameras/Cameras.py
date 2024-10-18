@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from asyncio import gather as async_gather
-from asyncio import run as async_run
-from asyncio import sleep as async_sleep
-from dataclasses import dataclass, field
 from datetime import datetime
 from os.path import isdir
 from queue import Queue
 from time import sleep
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Optional
+from dataclasses import dataclass
+from toml import load as toml_load 
 
 import PySpin
 
 from PyspinCameras.CamEventHandler import CamImageEventHandler
 
+__version__ = toml_load("pyproject.toml")["project"]["version"]
 
 @dataclass
 class Camera:
@@ -262,7 +261,7 @@ class Camera:
 
             # register the event handler
             self.cam.RegisterEventHandler(self.event_handler)
-            
+
             # register the event handler
             # res, self.image_event_handler = self.event_handler.configure_image_events(
             #     self.cam
@@ -273,11 +272,9 @@ class Camera:
             # success
             return True
 
-
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return False
-
 
         return res
 
@@ -906,29 +903,6 @@ class Cameras:
     grab_timeout: int = 5000
     verbose: bool = True
 
-    def __repr__(self) -> str:
-        """
-        Return the number of cameras detected.
-
-        :return: Number of cameras and their breif details.
-        :rtype: str
-        """
-
-        # make a string wi the model and serial of each camera detected
-        camera_details: str = ""
-        for i, cam in enumerate(self.camera_list):
-            camera_details += f"\n      Camera {i + 1} of {len(self.camera_list)} - Model: {cam.device_model_name} ({cam.device_serial_number})"
-
-        return (
-            "\nCameras(\n"
-            f"  Spinnaker version: {self.spinnaker_version}\n"
-            f"  Number of cameras detected: {len(self.camera_list)}\n"
-            f"  Save folder: {self.save_folder}\n"
-            f"  Queue: {True if self.queue is not None else False}\n"
-            f"  Camera details: {camera_details}\n"
-            ")\n"
-        )
-
     def __post_init__(self) -> list[Camera]:
         """
         Gets all the cameras attached and returns a list of Cameras, otherwise an empty list.
@@ -998,6 +972,29 @@ class Cameras:
 
         return self.camera_list
 
+    def __repr__(self) -> str:
+        """
+        Return the number of cameras detected.
+
+        :return: Number of cameras and their breif details.
+        :rtype: str
+        """
+
+        # make a string wi the model and serial of each camera detected
+        camera_details: str = ""
+        for i, cam in enumerate(self.camera_list):
+            camera_details += f"\n      Camera {i + 1} of {len(self.camera_list)} - Model: {cam.device_model_name} ({cam.device_serial_number})"
+
+        return (
+            "\nCameras(\n"
+            f"  Spinnaker version: {self.spinnaker_version}\n"
+            f"  Number of cameras detected: {len(self.camera_list)}\n"
+            f"  Save folder: {self.save_folder}\n"
+            f"  Queue size: [{self.queue.qsize() if self.queue is not None else 0}]\n"
+            f"  Camera details: {camera_details}\n"
+            ")\n"
+        )
+
     # define iterable object
     def __iter__(self):
         return self
@@ -1016,6 +1013,16 @@ class Cameras:
 
     def __getitem__(self, index: int) -> Camera:
         return self.camera_list[index]
+
+    def get_version_info(self) -> str:
+        """
+        Return the version of Spinnaker and the application.
+
+        :return: Version of Spinnaker and the application
+        :rtype: str
+        """
+        toml_file = toml_load("pyproject.toml")
+        return f"SpinCameras v{toml_file['project']['version']} - Spinnaker v{self.spinnaker_version}"
 
     def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
         """
@@ -1115,6 +1122,11 @@ class Cameras:
         """
 
         try:
+            # check if cameras exist
+            if len(self.camera_list) == 0:
+                print("No cameras detected. Exiting.")
+                return
+
             # Prepare each camera to acquire images
             self._begin_capture()
 
@@ -1127,20 +1139,27 @@ class Cameras:
                 _iter += 1
 
                 # check if we have enough images
-                if (num_images != -1 and num_images == _iter):
+                if num_images != -1 and num_images == _iter:
                     self.acquiring = False
                     if self.verbose:
-                        print(f"Acquired {num_images} images from each camera.")
+                        print(
+                            f"Acquired {num_images} images from {len(self.camera_list)} cameras."
+                        )
                     break
 
                 for i in range(len(self.camera_list)):
                     # check if cam has a callback function
                     if self.camera_list[i]._callback_set:
                         # check number of images
-                        if self.camera_list[i].event_handler.get_image_count() == num_images:
+                        if (
+                            self.camera_list[i].event_handler.get_image_count()
+                            == num_images
+                        ):
                             self.acquiring = False
                             if self.verbose:
-                                print(f"HANDLER acquired {num_images} images from each camera.")
+                                print(
+                                    f"HANDLER acquired {num_images} images from {len(self.camera_list)} cameras."
+                                )
                             break
                         # wait for callback to be called
                         sleep(0.1)
@@ -1210,11 +1229,6 @@ class Cameras:
         except KeyboardInterrupt:
             print("Keyboard interrupt detected.")
             self.acquiring = False
-
-        # whatever happens, try to stop cameras
-        finally:
-            # End acquisition for each camera
-            self._stop_capture()
 
     def __del__(self) -> None:
         """
