@@ -77,10 +77,11 @@ This project is a simple wrapper for the PySpin library to allow for easy contro
 
 Features:
 * Fast and easy to use.
-* Supports all FLIR cameras.
-* Supports all operating systems.
-* Supports all Python versions.
-* ...
+  * Get camera information.
+  * Set camera parameters.
+  * Acquire images.
+* Image queueing.
+* Image callback function.
 
 ### Built With
 

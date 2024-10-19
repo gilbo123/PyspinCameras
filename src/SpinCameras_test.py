@@ -57,8 +57,8 @@ if __name__ == "__main__":
 
     system: PySpin.System = PySpin.System.GetInstance()
     cameras: Cameras = Cameras(system=system)
-
-    print(cameras)
+    print(cameras.get_camera_info())
+    # print(cameras)
 
     cameras.initialise_cameras()
 

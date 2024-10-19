@@ -58,6 +58,9 @@ class Camera:
         self.cam.Init()
         self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
         self.device_model_name: str = self.cam.DeviceModelName.GetValue()
+        self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
+        self.device_version: str = self.cam.DeviceVersion.GetValue()
+        self.device_user_id: str = self.cam.DeviceUserID.GetValue()
         self.cam.DeInit()
 
         return self.cam
@@ -1023,6 +1026,24 @@ class Cameras:
         """
         toml_file = toml_load("pyproject.toml")
         return f"SpinCameras v{toml_file['project']['version']} - Spinnaker v{self.spinnaker_version}"
+    
+    def get_camera_info(self) -> str:
+        """
+        Return the information of each camera.
+
+        :return: Information of each camera
+        :rtype: str
+        """ 
+        camera_info: dict[str, str] = {}
+        for cam in self.camera_list:
+            camera_info[cam.device_serial_number] = {
+                "Model": cam.device_model_name,
+                "Serial": cam.device_serial_number,
+                "Vendor": cam.device_vendor_name,
+                "Firmware Version": cam.device_version,
+                "User ID": cam.device_user_id,
+            }
+        return camera_info
 
     def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
         """
