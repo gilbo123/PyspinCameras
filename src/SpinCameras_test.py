@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 from queue import Queue
+from threading import Thread
 from time import sleep
 from typing import Any
+
+from numpy import ndarray
 from PyspinCameras.Cameras import Camera, Cameras
 import PySpin
 
@@ -10,19 +13,8 @@ class MultipleCameraImageCallBack:
     """Callback to save images"""
 
     save_folder: str
-    cameras: Cameras
-    index: int
 
-    def __post_init__(self) -> None:
-        """
-        Post-initialisation method
-        """
-
-        # get the camera using `index`
-        # self.camera: Camera = self.cameras[self.index]
-        
-
-    def __call__(self, image_converted, filename: str) -> None:
+    def __call__(self, image_converted: PySpin.Image, filename: str) -> None:
         """
         Callback to save images
 
@@ -32,24 +24,61 @@ class MultipleCameraImageCallBack:
         :type filename: str
         """
 
-        print(f"Callback CLASS - Image {filename} saved.")
-
         # convert to numpy array
-        image_converted_numpy = image_converted.GetNDArray()
-        # convert BGR to RGB
-        # image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)  # type: ignore
+        image_converted_numpy: ndarray = image_converted.GetNDArray()
 
         print(f"Image shape: {image_converted_numpy.shape}")
-        
+
+        # save the image
+        print(f"Callback CLASS - Image {filename} saved.")
+
+        # anything else you want to do with the image
+        ## convert to RGB
+        # image_converted_numpy = cv2.cvtColor(image_converted_numpy, cv2.COLOR_BGR2RGB)  # type: ignore
+
+        ## display the image
         # cv2.imshow(cam_id, image_converted_numpy)  # type: ignore
         # cv2.waitKey(1)  # type: ignore
-        # save the image
+
+        ## save the image
         # cv2.imwrite(f"{self.save_folder}/{filename}", image_converted_numpy)  # type: ignore
 
 
 if __name__ == "__main__":
 
 
+    # reference to PySpin
+    system: PySpin.System = PySpin.System.GetInstance()
+
+    # reference to the queue
+    queue: Queue = Queue()
+
+    # pass the queue to the cameras
+    cameras: Cameras = Cameras(system=system, queue=queue)
+
+    # initialise the cameras
+    cameras.initialise_cameras()
+
+    print(cameras)
+    print(cameras[0])
+    
+    # acquire 10 images
+    Thread(target=cameras.acquire_images, kwargs={"num_images": 10}).start()
+
+    # access the queue
+    for i in range(10):
+        image_dict: dict[str, str | PySpin.Image] = queue.get()
+        # convert to numpy array
+        image_numpy: ndarray = image_dict["image"].GetNDArray()
+        
+        print(image_numpy.shape)
+        print(image_dict["filename"])
+        
+        # do something with the image
+
+
+
+    """
     TOP = "24132701"
     BOTTOM = "24025827"
     IR_TOP = "24236109"
@@ -62,7 +91,7 @@ if __name__ == "__main__":
 
     cameras.initialise_cameras()
 
-    callback = MultipleCameraImageCallBack(save_folder="/home/temp/images", cameras=cameras, index=0)
+    callback = MultipleCameraImageCallBack(save_folder="/home/temp/images")
 
     for i, cam in enumerate(cameras):
         # camera: Camera = cameras.get_camera_by_serial(cam.device_serial_number)
@@ -86,7 +115,7 @@ if __name__ == "__main__":
         print(cam.set_trigger_mode(trigger_mode="off"))
 
         #set callback
-        # cam.set_callback_function(callback)
+        cam.set_callback_function(callback)
 
         # start acquisition
         # cam.start_acquisition()
@@ -98,9 +127,9 @@ if __name__ == "__main__":
         # del camera    
         del cam
 
-    cameras.acquire_images(num_images=10)
+    cameras.acquire_images()
 
-    # cameras.deinitialise_cameras()
     cameras.release_all_cameras()
 
-    # system.ReleaseInstance()
+    system.ReleaseInstance()
+    """

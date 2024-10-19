@@ -21,25 +21,6 @@ class Camera:
     _cams: PySpin.CameraList
     _cam_index: int
 
-    def __repr__(self) -> str:
-        """
-        Return the camera serial number and model name.
-
-        :return: Camera serial number and model name.
-        :rtype: str
-        """
-
-        return (
-            "\nCamera(\n"
-            f"  Model: {self.device_model_name} (Serial: {self.device_serial_number})\n"
-            f"  Index: {self._cam_index + 1} (out of {len(self._cams)} cameras)\n"
-            f"  Temperature: {self.device_temperature:.2f}\u2103\n"
-            f"  Initialised: {self.is_initialised()}\n"
-            f"  Streaming: {self.is_streaming()}\n"
-            f"  Callback set: {self._callback_set}\n"
-            ")\n"
-        )
-
     def __post_init__(self) -> PySpin.CameraPtr:
         """
         Post initialisation function to get the camera based on the index.
@@ -64,6 +45,27 @@ class Camera:
         self.cam.DeInit()
 
         return self.cam
+    
+    
+    def __repr__(self) -> str:
+        """
+        Return the camera serial number and model name.
+
+        :return: Camera serial number and model name.
+        :rtype: str
+        """
+
+        return (
+            "\nCamera(\n"
+            f"  Model: {self.device_model_name} (Serial: {self.device_serial_number})\n"
+            f"  Index: {self._cam_index + 1} (out of {len(self._cams)} cameras)\n"
+            f"  Temperature: {self.device_temperature:.2f}\u2103\n"
+            f"  Initialised: {self.is_initialised()}\n"
+            f"  Streaming: {self.is_streaming()}\n"
+            f"  Callback set: {self._callback_set}\n"
+            ")\n"
+        )
+
 
     ###################
     ### TEMPERATURE ###
@@ -78,6 +80,10 @@ class Camera:
         :rtype: float
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return -1.0 
+        
         try:
             # set the device temp after capture
             temp = PySpin.CFloatPtr(
@@ -155,8 +161,7 @@ class Camera:
                 # check image event registers
                 if self._callback_set:
                     self.cam.UnregisterEventHandler(self.event_handler)
-                    # self.event_handler.reset_image_events(
-                    #     self.cam, self.image_event_handler
+                
                 # ready to deinit
                 self.cam.DeInit()
                 return True
@@ -205,10 +210,6 @@ class Camera:
             print("Error: %s" % ex)
             return False
 
-    #########################
-    ### CALLBACK_FUNCTION ###
-    #########################
-
     ##############################
     ### GRAB AND CONVERT IMAGE ###
     ##############################
@@ -220,6 +221,10 @@ class Camera:
         :return: ImagePtr if successful, None otherwise
         :rtype: PySpin.ImagePtr
         """
+
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
 
         try:
             # Retrieve next received image
@@ -239,6 +244,10 @@ class Camera:
             print("Error: %s" % ex)
             return None
 
+    #########################
+    ### CALLBACK_FUNCTION ###
+    #########################
+
     def set_callback_function(self, func: Callable) -> bool:
         """
         Set the callback function for the camera.
@@ -255,6 +264,10 @@ class Camera:
             print("Callback function not callable.")
             return False
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
 
             # create the event handler - with the defined function
@@ -293,6 +306,11 @@ class Camera:
         :return: True if successful, False otherwise
         :rtype: bool
         """
+        
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             # Trigger the camera
             self.cam.TriggerSoftware.Execute()
@@ -320,6 +338,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             if acq_mode == "continuous":
                 # Set acquisition mode to continuous
@@ -366,6 +388,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             # check to ensure frame rate enable is off
             if self.cam.AcquisitionFrameRateEnable.GetAccessMode() != PySpin.RW:
@@ -407,6 +433,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             if self.cam.ExposureAuto.GetAccessMode() != PySpin.RW:
                 print("Unable to update automatic exposure. Aborting...")
@@ -477,6 +507,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             if bal_mode == "continuous":
                 self.cam.BalanceWhiteAuto.SetValue(PySpin.BalanceWhiteAuto_Continuous)
@@ -530,6 +564,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             if gain_mode == "continuous":
                 self.cam.GainAuto.SetValue(PySpin.GainAuto_Continuous)
@@ -565,6 +603,7 @@ class Camera:
     #############
     ### GAMMA ###
     #############
+
     def set_gamma(self, gamma_enable: bool = False, gamma: float = 0.0) -> bool:
         """
         Set the gain mode and value if needed.
@@ -579,6 +618,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             if gamma_enable:
                 self.cam.GammaEnable.SetValue(True)
@@ -622,6 +665,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             stream: PySpin.INodeMap = self.cam.GetTLStreamNodeMap()
             if stream is None:
@@ -689,6 +736,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             # Ensure trigger mode off in order to update
             if self.cam.TriggerMode.GetAccessMode() != PySpin.RW:
@@ -775,6 +826,10 @@ class Camera:
         :return: True if successful, False otherwise
         :rtype: bool
         """
+        
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
 
         try:
             if self.cam.GevSCPSPacketSize.GetAccessMode() != PySpin.RW:
@@ -805,6 +860,10 @@ class Camera:
         :rtype: bool
         """
 
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             if self.cam.DeviceLinkThroughputLimit.GetAccessMode() != PySpin.RW:
                 print("Unable to set device throughput limit. Aborting...")
@@ -836,7 +895,11 @@ class Camera:
         :return: True if successful, False otherwise
         :rtype: bool
         """
-
+        # check if camera is initialised
+        if not self.is_initialised():
+            print("Unable to access device. Please use `initialise_cameras()` before setting parameters.")
+            return False
+        
         try:
             if self.cam.PixelFormat.GetAccessMode() != PySpin.RW:
                 print("Unable to set pixel format. Aborting...")
@@ -1017,7 +1080,8 @@ class Cameras:
     def __getitem__(self, index: int) -> Camera:
         return self.camera_list[index]
 
-    def get_version_info(self) -> str:
+    @property
+    def version_info(self) -> str:
         """
         Return the version of Spinnaker and the application.
 
@@ -1026,8 +1090,9 @@ class Cameras:
         """
         toml_file = toml_load("pyproject.toml")
         return f"SpinCameras v{toml_file['project']['version']} - Spinnaker v{self.spinnaker_version}"
-    
-    def get_camera_info(self) -> str:
+
+    @property
+    def camera_info(self) -> str:
         """
         Return the information of each camera.
 
