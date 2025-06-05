@@ -45,27 +45,9 @@ class Camera:
             "Please try reconnecting the device.": "range",
         }
 
-        try:
-            self.init_camera(self.cam)
-        except PySpin.SpinnakerException as ex:
-            print(f"Error: {ex}")
-            if "Camera is on a wrong subnet." in str(ex):
-                self.cam_reset.force_ip_by_cam(cam=self.cam)
-            if "GenICam::OutOfRangeException=" in str(ex):
-                self.cam_reset.reset_cam(cam=self.cam)
-            if "Please try reconnecting the device." in str(ex):
-                self.cam_reset.reset_cam(cam=self.cam)
-            
-            # wait for camera
-            sleep(20)
-            self.init_camera(self.cam)
-            return None
-        except Exception as ex:
-            print(f"Error: {ex}")
-            return None
+        # initialise the camera
+        self.init_camera(self.cam)
         
-
-
         # get the device serial number
         self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
 
