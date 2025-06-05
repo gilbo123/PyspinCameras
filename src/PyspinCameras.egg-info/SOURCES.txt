@@ -4,6 +4,7 @@ pyproject.toml
 src/SpinCameras_test.py
 src/PyspinCameras/Callbacks.py
 src/PyspinCameras/CamEventHandler.py
+src/PyspinCameras/CamReset.py
 src/PyspinCameras/Cameras.py
 src/PyspinCameras/__init__.py
 src/PyspinCameras.egg-info/PKG-INFO

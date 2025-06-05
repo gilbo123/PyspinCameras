@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from toml import load as toml_load 
 
 import PySpin
-
 from PyspinCameras.CamEventHandler import CamImageEventHandler
+from PyspinCameras.CamReset import CamReset
 
 __version__ = toml_load("pyproject.toml")["project"]["version"]
 
@@ -33,13 +33,30 @@ class Camera:
         self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self._cam_index)
 
         # callback function flag
-        self._callback_set: bool = False
+        self.callback_set: bool = False
 
-        # try to return the device name
-        self.cam.Init()
+        # camera reset module
+        self.cam_reset: CamReset = CamReset(system=PySpin.System.GetInstance())
+
+        # pyspin errors
+        self.pyspin_errors: dict[str, str] = {
+            "Camera is on a wrong subnet.": "ip",
+            "GenICam::OutOfRangeException=": "range",
+            "Please try reconnecting the device.": "range",
+        }
+
+        self.init_camera(self.cam)
+
+        # get the device serial number
         self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
+
+        # get the device model name
         self.device_model_name: str = self.cam.DeviceModelName.GetValue()
+
+        # get the device vendor name
         self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
+
+        # get the device version
         self.device_version: str = self.cam.DeviceVersion.GetValue()
         self.device_user_id: str = self.cam.DeviceUserID.GetValue()
         self.cam.DeInit()
@@ -62,7 +79,7 @@ class Camera:
             f"  Temperature: {self.device_temperature:.2f}\u2103\n"
             f"  Initialised: {self.is_initialised()}\n"
             f"  Streaming: {self.is_streaming()}\n"
-            f"  Callback set: {self._callback_set}\n"
+            f"  Callback set: {self.callback_set}\n"
             ")\n"
         )
 
@@ -94,6 +111,56 @@ class Camera:
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
             return -1.0
+
+
+    #########################
+    ### INITIALISE - INIT ###
+    #########################
+
+    def init_camera(self, cam: PySpin.CameraPtr) -> None:
+        """
+        Initialise the camera.
+        """
+
+        # try to return the device name
+        try:
+            self.cam.Init()
+        except PySpin.SpinnakerException as ex:
+            print(f"Error: {ex}")
+
+            # check which error
+            type: str = ""
+            for err, t in self.pyspin_errors.items():
+                if err in str(ex).split("Spinnaker: ")[1]:
+                    type = t
+
+            # if not expected, pass?
+            if type == "":
+                pass
+
+            # if value error (out of range), reset cam
+            if type == "range":
+                err_str: str = (
+                    f"Out of range exception for camera:\n{ex}.\n"
+                    "Resetting camera... Please wait."
+                )
+                print(err_str)
+                self.cam_reset.reset_cam(cam=self.cam)
+
+            # ip subnet wrong
+            if type == "ip":
+                err_str: str = (
+                    f"Wrong subnet exception for camera:\n{ex}.\n"
+                    "Forcing IP... Please wait."
+                )
+                print(err_str)
+                self.cam_reset.force_ip_by_cam(cam=self.cam)
+
+            # wait for camera
+            sleep(20)
+
+            # try again
+            self.init_camera(cam=self.cam)
 
     ######################
     ### IS_INITIALISED ###
@@ -292,7 +359,7 @@ class Camera:
             print("Error: %s" % ex)
             return False
 
-        return res
+        # return res
 
     ################################
     ### EXECUTE SOFTWARE TRIGGER ###
@@ -1233,9 +1300,9 @@ class Cameras:
                         )
                     break
 
-                for i in range(len(self.camera_list)):
+                for i, cam in enumerate(self.camera_list):
                     # check if cam has a callback function
-                    if self.camera_list[i]._callback_set:
+                    if self.camera_list[i].callback_set:
                         # check number of images
                         if (
                             self.camera_list[i].event_handler.get_image_count()
