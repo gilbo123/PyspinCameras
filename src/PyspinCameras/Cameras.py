@@ -29,9 +29,6 @@ class Camera:
         :rtype: PySpin.CameraPtr
         """
 
-        # get the camera based on index
-        self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self._cam_index)
-
         # callback function flag
         self.callback_set: bool = False
 
@@ -46,7 +43,7 @@ class Camera:
         }
 
         # initialise the camera
-        self.init_camera(self.cam)
+        self.init_camera()
         
         # get the device serial number
         self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
@@ -118,13 +115,17 @@ class Camera:
     ### INITIALISE - INIT ###
     #########################
 
-    def init_camera(self, cam: PySpin.CameraPtr) -> None:
+    def init_camera(self) -> None:
         """
         Initialise the camera.
         """
 
         # try to return the device name
         try:
+            # get the camera based on index
+            self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self._cam_index)
+
+            # initialise the camera
             self.cam.Init()
         except PySpin.SpinnakerException as ex:
             print(f"Error: {ex}")
@@ -161,7 +162,7 @@ class Camera:
             sleep(20)
 
             # try again
-            self.init_camera(cam=self.cam)
+            self.init_camera()
 
     ######################
     ### IS_INITIALISED ###
