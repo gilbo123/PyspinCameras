@@ -55,10 +55,16 @@ class Camera:
                 self.cam_reset.reset_cam(cam=self.cam)
             if "Please try reconnecting the device." in str(ex):
                 self.cam_reset.reset_cam(cam=self.cam)
+            
+            # wait for camera
+            sleep(20)
+            self.init_camera(self.cam)
             return None
         except Exception as ex:
             print(f"Error: {ex}")
             return None
+        
+
 
         # get the device serial number
         self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
