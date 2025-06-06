@@ -32,32 +32,30 @@ class Camera:
         # callback function flag
         self.callback_set: bool = False
 
-        # camera reset module
-        self.cam_reset: CamReset = CamReset(system=PySpin.System.GetInstance())
+        # get the camera based on index
+        self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self._cam_index)
 
-        # pyspin errors
-        self.pyspin_errors: dict[str, str] = {
-            "Camera is on a wrong subnet.": "ip",
-            "GenICam::OutOfRangeException=": "range",
-            "Please try reconnecting the device.": "range",
-        }
+        try:
+            # initialise the camera
+            self.init_camera()
+            
+            # get the device serial number
+            self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
 
-        # initialise the camera
-        self.init_camera()
-        
-        # get the device serial number
-        self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
+            # get the device model name
+            self.device_model_name: str = self.cam.DeviceModelName.GetValue()
 
-        # get the device model name
-        self.device_model_name: str = self.cam.DeviceModelName.GetValue()
+            # get the device vendor name
+            self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
 
-        # get the device vendor name
-        self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
+            # get the device version
+            self.device_version: str = self.cam.DeviceVersion.GetValue()
+            self.device_user_id: str = self.cam.DeviceUserID.GetValue()
+            self.cam.DeInit()
 
-        # get the device version
-        self.device_version: str = self.cam.DeviceVersion.GetValue()
-        self.device_user_id: str = self.cam.DeviceUserID.GetValue()
-        self.cam.DeInit()
+        except PySpin.SpinnakerException as ex:
+            print(f"Error: {ex}")
+            return None
 
         return self.cam
     
@@ -122,47 +120,11 @@ class Camera:
 
         # try to return the device name
         try:
-            # get the camera based on index
-            self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self._cam_index)
-
             # initialise the camera
             self.cam.Init()
         except PySpin.SpinnakerException as ex:
             print(f"Error: {ex}")
 
-            # check which error
-            type: str = ""
-            for err, t in self.pyspin_errors.items():
-                if err in str(ex).split("Spinnaker: ")[1]:
-                    type = t
-
-            # if not expected, pass?
-            if type == "":
-                pass
-
-            # if value error (out of range), reset cam
-            if type == "range":
-                err_str: str = (
-                    f"Out of range exception for camera:\n{ex}.\n"
-                    "Resetting camera... Please wait."
-                )
-                print(err_str)
-                self.cam_reset.reset_cam(cam=self.cam)
-
-            # ip subnet wrong
-            if type == "ip":
-                err_str: str = (
-                    f"Wrong subnet exception for camera:\n{ex}.\n"
-                    "Forcing IP... Please wait."
-                )
-                print(err_str)
-                self.cam_reset.force_ip_by_cam(cam=self.cam)
-
-            # wait for camera
-            sleep(20)
-
-            # try again
-            self.init_camera()
 
     ######################
     ### IS_INITIALISED ###
@@ -1055,41 +1017,28 @@ class Cameras:
             f"{spin_version.build}"
         )
 
+        # pyspin errors
+        self.pyspin_errors: dict[str, str] = {
+            "Camera is on a wrong subnet.": "ip",
+            "GenICam::OutOfRangeException=": "range",
+            "Please try reconnecting the device.": "range",
+        }
+
+        # camera reset module
+        self.cam_reset: CamReset = CamReset(system=self.system)
+
         # initialise iterations counter for zero cameras
         self.__iter_counter: int = 0
         self.__iter_end: int = 0
 
-        # the list of cameras to return
-        self.camera_list: list[Camera] = []
-
-        # Retrieve list of cameras from the system
-        self._cams: PySpin.CameraList = self.system.GetCameras()
-
-        # check folder
+         # check folder
         if self.save_folder is not None:
             if not isdir(self.save_folder):
                 print(f"Save folder {self.save_folder} not found. Exiting.")
                 exit()
 
-        num_cameras = self._cams.GetSize()
-        if self.verbose:
-            print("Number of cameras detected: %d" % num_cameras)
-
-        # Finish if there are no cameras
-        if num_cameras == 0:
-
-            # Clear camera list before releasing system
-            self._cams.Clear()
-
-            # Release system instance
-            self.system.ReleaseInstance()
-
-            print("Not enough cameras!")
-            return self.camera_list
-
-        # Create camera object for each camera
-        for i in range(len(self._cams)):
-            self.camera_list.append(Camera(_cams=self._cams, _cam_index=i))
+        # set up the cameras and correct any errors
+        self.set_up_cams_and_correct_errors()
 
         # Create ImageProcessor instance for post processing images
         self.processor = PySpin.ImageProcessor()
@@ -1167,7 +1116,7 @@ class Cameras:
 
         :return: Information of each camera
         :rtype: str
-        """ 
+        """
         camera_info: dict[str, str] = {}
         for cam in self.camera_list:
             camera_info[cam.device_serial_number] = {
@@ -1178,6 +1127,74 @@ class Cameras:
                 "User ID": cam.device_user_id,
             }
         return camera_info
+
+    def set_up_cams_and_correct_errors(self) -> None:
+        """
+        Set up the cameras and correct any errors.
+        """
+        try:
+            # the list of cameras to return
+            self.camera_list: list[Camera] = []
+
+            # Retrieve list of cameras from the system
+            self._cams: PySpin.CameraList = self.system.GetCameras()
+
+            num_cameras = self._cams.GetSize()
+            if self.verbose:
+                print("Number of cameras detected: %d" % num_cameras)
+
+            # Finish if there are no cameras
+            if num_cameras == 0:
+
+                # Clear camera list before releasing system
+                self._cams.Clear()
+
+                # Release system instance
+                self.system.ReleaseInstance()
+
+                print("Not enough cameras!")
+                return self.camera_list
+
+            # need to send all cameras to the camera object
+            for i, cam in enumerate(self._cams):
+                # Create camera object for each camera
+                self.camera_list.append(Camera(_cams=self._cams, _cam_index=i))
+            
+        except PySpin.SpinnakerException as ex:
+            print(f"Error: {ex}")
+            # check which error
+            e_type: str = ""
+            for err, t in self.pyspin_errors.items():
+                if err in str(ex).split("Spinnaker: ")[1]:
+                    e_type = t
+
+            # if not expected, pass?
+            if e_type == "":
+                pass
+
+            # if value error (out of range), reset cam
+            if e_type == "range":
+                err_str: str = (
+                    f"Out of range exception for camera:\n{ex}.\n"
+                    "Resetting camera... Please wait."
+                )
+                print(err_str)
+                self.cam_reset.reset_cam(cam=cam)
+
+            # ip subnet wrong
+            if e_type == "ip":
+                err_str: str = (
+                    f"Wrong subnet exception for camera:\n{ex}.\n"
+                    "Forcing IP... Please wait."
+                )
+                print(err_str)
+                self.cam_reset.force_ip_by_cam(cam=cam)
+
+            # wait for camera
+            sleep(20)
+
+            # try again
+            self.set_up_cams_and_correct_errors()
 
     def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
         """
