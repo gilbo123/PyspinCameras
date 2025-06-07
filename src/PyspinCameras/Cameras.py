@@ -1132,69 +1132,70 @@ class Cameras:
         """
         Set up the cameras and correct any errors.
         """
-        try:
-            # the list of cameras to return
-            self.camera_list: list[Camera] = []
+        # the list of cameras to return
+        self.camera_list: list[Camera] = []
 
-            # Retrieve list of cameras from the system
-            self._cams: PySpin.CameraList = self.system.GetCameras()
+        # Retrieve list of cameras from the system
+        self._cams: PySpin.CameraList = self.system.GetCameras()
 
-            num_cameras = self._cams.GetSize()
-            if self.verbose:
-                print("Number of cameras detected: %d" % num_cameras)
+        num_cameras = self._cams.GetSize()
+        if self.verbose:
+            print(f"Number of cameras detected: {num_cameras}")
 
-            # Finish if there are no cameras
-            if num_cameras == 0:
+        # Finish if there are no cameras
+        if num_cameras == 0:
 
-                # Clear camera list before releasing system
-                self._cams.Clear()
+            # Clear camera list before releasing system
+            self._cams.Clear()
 
-                # Release system instance
-                self.system.ReleaseInstance()
+            # Release system instance
+            self.system.ReleaseInstance()
 
-                print("Not enough cameras!")
-                return self.camera_list
+            print("Not enough cameras!")
+            return self.camera_list
 
-            # need to send all cameras to the camera object
-            for i, cam in enumerate(self._cams):
+        # connect to cameras
+        # correct any errors
+        # e.g. wrong subnet, out of range, etc.
+        # need to send all cameras to the camera object
+        for i, cam in enumerate(self._cams):
+            try:
                 # Create camera object for each camera
                 self.camera_list.append(Camera(_cams=self._cams, _cam_index=i))
-            
-        except PySpin.SpinnakerException as ex:
-            print(f"Error: {ex}")
-            # check which error
-            e_type: str = ""
-            for err, t in self.pyspin_errors.items():
-                if err in str(ex).split("Spinnaker: ")[1]:
-                    e_type = t
+                if self.verbose:
+                    print(f"Camera {i + 1} of {len(self._cams)} connected.")
 
-            # if not expected, pass?
-            if e_type == "":
-                pass
+            # if error, correct it and try again
+            except PySpin.SpinnakerException as ex:
+                if self.verbose:
+                    print(f"Error: {ex}")
+                # check which error
+                e_type: str = ""
+                for err, t in self.pyspin_errors.items():
+                    if err in str(ex).split("Spinnaker: ")[1]:
+                        e_type = t
 
-            # if value error (out of range), reset cam
-            if e_type == "range":
-                err_str: str = (
-                    f"Out of range exception for camera:\n{ex}.\n"
-                    "Resetting camera... Please wait."
-                )
-                print(err_str)
-                self.cam_reset.reset_cam(cam=cam)
+                # if not expected, pass?
+                if e_type == "":
+                    pass
 
-            # ip subnet wrong
-            if e_type == "ip":
-                err_str: str = (
-                    f"Wrong subnet exception for camera:\n{ex}.\n"
-                    "Forcing IP... Please wait."
-                )
-                print(err_str)
-                self.cam_reset.force_ip_by_cam(cam=cam)
+                # if value error (out of range), reset cam
+                if e_type == "range":
+                    err_str: str = f"Error: {ex}.\n"
+                    print(err_str)
+                    self.cam_reset.reset_cam(cam=cam)
 
-            # wait for camera
-            sleep(20)
+                # ip subnet wrong
+                if e_type == "ip":
+                    err_str: str = f"Error: {ex}.\n"
+                    print(err_str)
+                    self.cam_reset.force_ip_by_cam(cam=cam)
 
-            # try again
-            self.set_up_cams_and_correct_errors()
+                # wait for camera
+                sleep(20)
+
+                # try again
+                self.set_up_cams_and_correct_errors()
 
     def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
         """
