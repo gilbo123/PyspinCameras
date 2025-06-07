@@ -1167,6 +1167,9 @@ class Cameras:
                 # wait for camera
                 sleep(20)
 
+                # clear the camera list
+                self._cams.Clear()
+
                 # try again
                 self.set_up_cams_and_correct_errors()
 
