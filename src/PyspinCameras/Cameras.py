@@ -1168,6 +1168,7 @@ class Cameras:
                 sleep(20)
 
                 # clear the camera list
+                del cam_obj
                 self._cams.Clear()
                 self.camera_list = []
 
