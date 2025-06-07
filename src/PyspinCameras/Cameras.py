@@ -206,10 +206,13 @@ class Camera:
         :rtype: bool
         """
 
-        if self.cam.IsStreaming():
+        try:
             self.cam.EndAcquisition()
             return True
-        return False
+
+        except PySpin.SpinnakerException as ex:
+            print("Error: %s" % ex)
+            return False
 
     ##############################
     ### GRAB AND CONVERT IMAGE ###
@@ -947,9 +950,18 @@ class Camera:
 
         :return: None
         """
-
-        self.stop_acquisition()
-        self.deinitialise()
+        try:
+            self.stop_acquisition()
+        except:
+            pass
+        try:
+            self.deinitialise()
+        except:
+            pass
+        try:
+            del self.cam
+        except:
+            pass
 
 
 @dataclass
@@ -1154,10 +1166,6 @@ class Cameras:
 
                 # wait for camera
                 sleep(20)
-
-                # clear the camera list
-                self.camera_list = []
-                self._cams.Clear()
 
                 # try again
                 self.set_up_cams_and_correct_errors()
