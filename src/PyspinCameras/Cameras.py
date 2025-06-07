@@ -1010,6 +1010,28 @@ class Cameras:
                 print(f"Save folder {self.save_folder} not found. Exiting.")
                 exit()
 
+         # the list of cameras to return
+        self.camera_list: list[Camera] = []
+
+        # Retrieve list of cameras from the system
+        self._cams: PySpin.CameraList = self.system.GetCameras()
+
+        num_cameras = self._cams.GetSize()
+        if self.verbose:
+            print(f"Number of cameras detected: {num_cameras}")
+
+        # Finish if there are no cameras
+        if num_cameras == 0:
+
+            # Clear camera list before releasing system
+            self._cams.Clear()
+
+            # Release system instance
+            self.system.ReleaseInstance()
+
+            print("Not enough cameras!")
+            exit()
+            
         # set up the cameras and correct any errors
         self.set_up_cams_and_correct_errors()
 
@@ -1105,27 +1127,6 @@ class Cameras:
         """
         Set up the cameras and correct any errors.
         """
-        # the list of cameras to return
-        self.camera_list: list[Camera] = []
-
-        # Retrieve list of cameras from the system
-        self._cams: PySpin.CameraList = self.system.GetCameras()
-
-        num_cameras = self._cams.GetSize()
-        if self.verbose:
-            print(f"Number of cameras detected: {num_cameras}")
-
-        # Finish if there are no cameras
-        if num_cameras == 0:
-
-            # Clear camera list before releasing system
-            self._cams.Clear()
-
-            # Release system instance
-            self.system.ReleaseInstance()
-
-            print("Not enough cameras!")
-            exit()
 
         # connect to cameras
         # correct any errors
@@ -1166,11 +1167,6 @@ class Cameras:
 
                 # wait for camera
                 sleep(20)
-
-                # clear the camera list
-                del cam_obj
-                self._cams.Clear()
-                self.camera_list = []
 
                 # try again
                 self.set_up_cams_and_correct_errors()
