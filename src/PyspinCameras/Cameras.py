@@ -997,7 +997,9 @@ class Cameras:
             "Please try reconnecting the device.": "range",
         }
 
-        
+        # camera reset module
+        self.cam_reset: CamReset = CamReset(system=self.system)
+
         # initialise iterations counter for zero cameras
         self.__iter_counter: int = 0
         self.__iter_end: int = 0
@@ -1109,9 +1111,6 @@ class Cameras:
         # Retrieve list of cameras from the system
         self._cams: PySpin.CameraList = self.system.GetCameras()
 
-        # camera reset module
-        cam_reset: CamReset = CamReset(system=self.system)
-
         num_cameras = self._cams.GetSize()
         if self.verbose:
             print(f"Number of cameras detected: {num_cameras}")
@@ -1157,13 +1156,16 @@ class Cameras:
                 if e_type == "range":
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
-                    cam_reset.reset_cam(cam=cam)
+                    self.cam_reset.reset_cam(cam=cam)
+                    # clear the cams otherwise error will be raised
+                    self._cams.Clear()
+                    self.camera_list = []
 
                 # ip subnet wrong
                 if e_type == "ip":
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
-                    cam_reset.force_ip_by_cam(cam=cam)
+                    self.cam_reset.force_ip_by_cam(cam=cam)
 
                 # wait for camera
                 sleep(20)
