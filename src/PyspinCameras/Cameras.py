@@ -989,7 +989,7 @@ class Cameras:
     save_folder: Optional[str] = None
     queue: Optional[Queue[dict[str, PySpin.ImagePtr | str]]] = None
     grab_timeout: int = 5000
-    verbose: bool = True
+    verbose: bool = False
 
     def __post_init__(self) -> list[Camera]:
         """
