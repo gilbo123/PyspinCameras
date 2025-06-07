@@ -35,27 +35,22 @@ class Camera:
         # get the camera based on index
         self.cam: PySpin.CameraPtr = self._cams.GetByIndex(self._cam_index)
 
-        try:
-            # initialise the camera
-            self.init_camera()
-            
-            # get the device serial number
-            self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
+        # initialise the camera
+        self.init_camera()
+        
+        # get the device serial number
+        self.device_serial_number: str = self.cam.DeviceSerialNumber.GetValue()
 
-            # get the device model name
-            self.device_model_name: str = self.cam.DeviceModelName.GetValue()
+        # get the device model name
+        self.device_model_name: str = self.cam.DeviceModelName.GetValue()
 
-            # get the device vendor name
-            self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
+        # get the device vendor name
+        self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
 
-            # get the device version
-            self.device_version: str = self.cam.DeviceVersion.GetValue()
-            self.device_user_id: str = self.cam.DeviceUserID.GetValue()
-            self.cam.DeInit()
-
-        except PySpin.SpinnakerException as ex:
-            print(f"Error: {ex}")
-            return None
+        # get the device version
+        self.device_version: str = self.cam.DeviceVersion.GetValue()
+        self.device_user_id: str = self.cam.DeviceUserID.GetValue()
+        self.cam.DeInit()
 
         return self.cam
     
