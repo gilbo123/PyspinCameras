@@ -1157,9 +1157,6 @@ class Cameras:
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
                     self.cam_reset.reset_cam(cam=cam)
-                    # clear the cams otherwise error will be raised
-                    self._cams.Clear()
-                    self.camera_list = []
 
                 # ip subnet wrong
                 if e_type == "ip":
@@ -1169,6 +1166,7 @@ class Cameras:
 
                 # wait for camera
                 sleep(20)
+                e_type = ""
 
                 # try again
                 self.set_up_cams_and_correct_errors()
