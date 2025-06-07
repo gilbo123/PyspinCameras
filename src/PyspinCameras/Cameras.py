@@ -1010,6 +1010,9 @@ class Cameras:
                 print(f"Save folder {self.save_folder} not found. Exiting.")
                 exit()
 
+        # Retrieve list of cameras from the system
+        self._cams: PySpin.CameraList = self.system.GetCameras()
+
         # set up the cameras and correct any errors
         self.set_up_cams_and_correct_errors()
 
@@ -1107,9 +1110,6 @@ class Cameras:
         """
         # the list of cameras to return
         self.camera_list: list[Camera] = []
-
-        # Retrieve list of cameras from the system
-        self._cams: PySpin.CameraList = self.system.GetCameras()
 
         num_cameras = self._cams.GetSize()
         if self.verbose:
