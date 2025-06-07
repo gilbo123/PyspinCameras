@@ -1156,17 +1156,23 @@ class Cameras:
                 if e_type == "range":
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
+                    cam.DeInit()
                     self.cam_reset.reset_cam(cam=cam)
 
                 # ip subnet wrong
                 if e_type == "ip":
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
+                    cam.DeInit()
                     self.cam_reset.force_ip_by_cam(cam=cam)
 
                 # wait for camera
-                sleep(30)
-                
+                sleep(20)
+
+                # clear the camera list
+                self.camera_list = []
+                self._cams.Clear()
+
                 # try again
                 self.set_up_cams_and_correct_errors()
 
