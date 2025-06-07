@@ -1147,7 +1147,7 @@ class Cameras:
             self.system.ReleaseInstance()
 
             print("Not enough cameras!")
-            return self.camera_list
+            exit()
 
         # connect to cameras
         # correct any errors
@@ -1156,7 +1156,7 @@ class Cameras:
         for i, cam in enumerate(self._cams):
             try:
                 # Create camera object for each camera
-                self.camera_list.append(Camera(_cams=self._cams, _cam_index=i))
+                cam_obj: Camera = Camera(_cams=self._cams, _cam_index=i)
                 if self.verbose:
                     print(f"Camera {i + 1} of {len(self._cams)} connected.")
 
@@ -1191,6 +1191,10 @@ class Cameras:
 
                 # try again
                 self.set_up_cams_and_correct_errors()
+
+            # if no error, add to camera list
+            else:
+                self.camera_list.append(cam_obj)
 
     def get_camera_by_serial(self, serial: str) -> Optional[Camera]:
         """
