@@ -187,7 +187,12 @@ class Camera:
         :rtype: bool
         """
         try:
-            self.cam.BeginAcquisition()
+            if not self.cam.IsStreaming():
+                self.cam.BeginAcquisition()
+            else:
+                print("Camera already streaming.")
+                return False
+
             return True
 
         except PySpin.SpinnakerException as ex:
@@ -207,8 +212,10 @@ class Camera:
         """
 
         try:
-            self.cam.EndAcquisition()
-            return True
+            if self.cam.IsStreaming():
+                self.cam.EndAcquisition()
+                return True
+            return False
 
         except PySpin.SpinnakerException as ex:
             print("Error: %s" % ex)
