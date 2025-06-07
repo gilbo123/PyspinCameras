@@ -997,9 +997,7 @@ class Cameras:
             "Please try reconnecting the device.": "range",
         }
 
-        # camera reset module
-        self.cam_reset: CamReset = CamReset(system=self.system)
-
+        
         # initialise iterations counter for zero cameras
         self.__iter_counter: int = 0
         self.__iter_end: int = 0
@@ -1010,28 +1008,6 @@ class Cameras:
                 print(f"Save folder {self.save_folder} not found. Exiting.")
                 exit()
 
-         # the list of cameras to return
-        self.camera_list: list[Camera] = []
-
-        # Retrieve list of cameras from the system
-        self._cams: PySpin.CameraList = self.system.GetCameras()
-
-        num_cameras = self._cams.GetSize()
-        if self.verbose:
-            print(f"Number of cameras detected: {num_cameras}")
-
-        # Finish if there are no cameras
-        if num_cameras == 0:
-
-            # Clear camera list before releasing system
-            self._cams.Clear()
-
-            # Release system instance
-            self.system.ReleaseInstance()
-
-            print("Not enough cameras!")
-            exit()
-            
         # set up the cameras and correct any errors
         self.set_up_cams_and_correct_errors()
 
@@ -1127,6 +1103,30 @@ class Cameras:
         """
         Set up the cameras and correct any errors.
         """
+        # the list of cameras to return
+        self.camera_list: list[Camera] = []
+
+        # Retrieve list of cameras from the system
+        self._cams: PySpin.CameraList = self.system.GetCameras()
+
+        # camera reset module
+        self.cam_reset: CamReset = CamReset(system=self.system)
+
+        num_cameras = self._cams.GetSize()
+        if self.verbose:
+            print(f"Number of cameras detected: {num_cameras}")
+
+        # Finish if there are no cameras
+        if num_cameras == 0:
+
+            # Clear camera list before releasing system
+            self._cams.Clear()
+
+            # Release system instance
+            self.system.ReleaseInstance()
+
+            print("Not enough cameras!")
+            exit()
 
         # connect to cameras
         # correct any errors
