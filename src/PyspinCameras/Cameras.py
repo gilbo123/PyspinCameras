@@ -1110,7 +1110,7 @@ class Cameras:
         self._cams: PySpin.CameraList = self.system.GetCameras()
 
         # camera reset module
-        self.cam_reset: CamReset = CamReset(system=self.system)
+        cam_reset: CamReset = CamReset(system=self.system)
 
         num_cameras = self._cams.GetSize()
         if self.verbose:
@@ -1157,13 +1157,13 @@ class Cameras:
                 if e_type == "range":
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
-                    self.cam_reset.reset_cam(cam=cam)
+                    cam_reset.reset_cam(cam=cam)
 
                 # ip subnet wrong
                 if e_type == "ip":
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
-                    self.cam_reset.force_ip_by_cam(cam=cam)
+                    cam_reset.force_ip_by_cam(cam=cam)
 
                 # wait for camera
                 sleep(20)
