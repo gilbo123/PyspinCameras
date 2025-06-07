@@ -1154,19 +1154,19 @@ class Cameras:
 
                 # if value error (out of range), reset cam
                 if e_type == "range":
-                    self.cam_reset.reset_cam(cam=cam)
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
+                    self.cam_reset.reset_cam(cam=cam)
 
                 # ip subnet wrong
                 if e_type == "ip":
-                    self.cam_reset.force_ip_by_cam(cam=cam)
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
+                    self.cam_reset.force_ip_by_cam(cam=cam)
 
                 # wait for camera
-                sleep(20)
-
+                sleep(30)
+                
                 # try again
                 self.set_up_cams_and_correct_errors()
 
