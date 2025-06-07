@@ -113,12 +113,8 @@ class Camera:
         Initialise the camera.
         """
 
-        # try to return the device name
-        try:
-            # initialise the camera
-            self.cam.Init()
-        except PySpin.SpinnakerException as ex:
-            print(f"Error: {ex}")
+        # initialise the camera
+        self.cam.Init()
 
 
     ######################
