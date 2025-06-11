@@ -163,7 +163,7 @@ class Camera:
         try:
             if self.cam.IsInitialized():
                 # check image event registers
-                if self._callback_set:
+                if self.callback_set:
                     self.cam.UnregisterEventHandler(self.event_handler)
                 
                 # ready to deinit
@@ -294,7 +294,7 @@ class Camera:
             #     self.cam
             # )
             # set flag
-            self._callback_set = True
+            self.callback_set = True
 
             # success
             return True
