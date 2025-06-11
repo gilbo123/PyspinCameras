@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyspinCameras"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name = "Gilbert Eaton", email = "gilberteaton@gmal.com" },
   { name = "Jonathon Holder", email = "jonathon.holder.90@gmail.com" },
