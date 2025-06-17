@@ -48,7 +48,7 @@ class Camera:
         self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
 
         # get the device ip address
-        self.device_ip_address: str = self.cam.GevCurrentIPAddress.GetValue()
+        self.device_ip_address: str = self.convert_ip_to_str(self.cam.GevCurrentIPAddress.GetValue())
 
         # get the device version
         self.device_version: str = self.cam.DeviceVersion.GetValue()
@@ -107,6 +107,21 @@ class Camera:
             print("Error: %s" % ex)
             return -1.0
 
+    #########################
+    ### CONVERT_IP_TO_STR ###
+    #########################
+
+    def convert_ip_to_str(self, ip: PySpin.GenICam.IpAddress) -> str:
+        """
+        Convert the ip address to a string.
+
+        :param ip: Ip address
+        :type ip: PySpin.GenICam.IpAddress
+        :return: Ip address as a string
+        :rtype: str
+        """
+
+        return f"{ip.octet[0]}.{ip.octet[1]}.{ip.octet[2]}.{ip.octet[3]}"
 
     ######################
     ### IS_INITIALISED ###
@@ -1174,9 +1189,7 @@ class Cameras:
                 if e_type == "ip":
                     err_str: str = f"Error: {ex}.\n"
                     print(err_str)
-                    print(f"old address: {cam.GevCurrentIPAddress.GetValue()}")
                     self.cam_reset.force_ip_by_cam(cam=cam)
-                    print(f"new address: {cam.GevCurrentIPAddress.GetValue()}")
 
                 # clear the camera list
                 self.camera_list = []
