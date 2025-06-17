@@ -70,7 +70,7 @@ class CamReset:
         ).GetValue()
 
         # get the current ip address
-        current_ip_str: str = self.convert_ip_to_str(cam.GevCurrentIPAddress.GetValue())
+        # current_ip_str: str = self.convert_ip_to_str(cam.GevCurrentIPAddress.GetValue())
 
         # perform forceIP
         # Init() not required for TL Force
@@ -79,7 +79,7 @@ class CamReset:
             dev: PySpin.TransportLayerDevice = cam.TLDevice
             force: PySpin.ICommand = dev.GevDeviceAutoForceIP
             force.ImposeAccessMode(PySpin.RW)
-            print(f"Forcing IP for cam {device_serial_number} on ip {current_ip_str}...")
+            print(f"Forcing IP for cam {device_serial_number} on ip...")
             force.Execute(Verify=True)
             print(f"New IP address: {self.convert_ip_to_str(cam.GevCurrentIPAddress.GetValue())}")
         except PySpin.SpinnakerException as ex:
