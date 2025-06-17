@@ -978,15 +978,15 @@ class Camera:
         """
         try:
             self.stop_acquisition()
-        except:
+        except PySpin.SpinnakerException:
             pass
         try:
             self.deinitialise()
-        except:
+        except PySpin.SpinnakerException:
             pass
         try:
             del self.cam
-        except:
+        except PySpin.SpinnakerException:
             pass
 
 
