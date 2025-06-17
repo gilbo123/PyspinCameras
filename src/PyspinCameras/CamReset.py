@@ -70,8 +70,7 @@ class CamReset:
         ).GetValue()
 
         # get the current ip address
-        current_ip: int = cam.GevCurrentIPAddress.GetValue()
-        current_ip_str: str = self.convert_ip_to_str(current_ip)
+        current_ip_str: str = self.convert_ip_to_str(cam.GevCurrentIPAddress.GetValue())
 
         # perform forceIP
         # Init() not required for TL Force
@@ -222,7 +221,7 @@ class CamReset:
 
     def convert_ip_to_str(self, ip: int) -> str:
         """Convert the ip address to a string."""
-        
+
         return f"{ip >> 24 & 0xFF}.{ip >> 16 & 0xFF}.{ip >> 8 & 0xFF}.{ip & 0xFF}"
 
 
