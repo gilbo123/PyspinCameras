@@ -111,7 +111,7 @@ class Camera:
     ### CONVERT_IP_TO_STR ###
     #########################
 
-    def convert_ip_to_str(self, ip: PySpin.GenICam.IpAddress) -> str:
+    def convert_ip_to_str(self, ip: int) -> str:
         """
         Convert the ip address to a string.
 
@@ -121,7 +121,7 @@ class Camera:
         :rtype: str
         """
 
-        return f"{ip.octet[0]}.{ip.octet[1]}.{ip.octet[2]}.{ip.octet[3]}"
+        return f"{ip >> 24 & 0xFF}.{ip >> 16 & 0xFF}.{ip >> 8 & 0xFF}.{ip & 0xFF}"
 
     ######################
     ### IS_INITIALISED ###
