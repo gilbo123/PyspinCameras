@@ -48,7 +48,16 @@ class Camera:
         self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
 
         # get the device ip address
-        self.device_ip_address: str = self.convert_ip_to_str(self.cam.GevCurrentIPAddress.GetValue())
+        # check if the device is GigE or USB
+        # GigE
+        if "-PGE-" in self.device_model_name:
+            self.device_ip_address: str = self.convert_ip_to_str(self.cam.GevCurrentIPAddress.GetValue())
+        # USB
+        elif "-U3-" in self.device_model_name:
+            self.device_ip_address: str = None
+        # Unknown
+        else:
+            raise ValueError(f"Unknown device model name: {self.device_model_name}")
 
         # get the device version
         self.device_version: str = self.cam.DeviceVersion.GetValue()
@@ -70,7 +79,7 @@ class Camera:
             "\nCamera(\n"
             f"  Model: {self.device_model_name} (Serial: {self.device_serial_number})\n"
             f"  Index: {self._cam_index + 1} (out of {len(self._cams)} cameras)\n"
-            f"  Local IP Address: {self.device_ip_address}\n"
+            f"  Local IP Address: {self.device_ip_address}\n" if self.device_ip_address else ""
             f"  Temperature: {self.device_temperature:.2f}\u2103\n"
             f"  Initialised: {self.is_initialised()}\n"
             f"  Streaming: {self.is_streaming()}\n"
