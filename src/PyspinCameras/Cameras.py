@@ -52,7 +52,8 @@ class Camera:
         self.width: int = self.cam.Width.GetValue()
         # resolution
         self.resolution: str = f"{(self.width*self.height)/1000000:.2f}MP"
-        self.pixel_format: str = self.cam.PixelFormat.GetCurrentEntry().GetName()
+        self.pixel_format: str = self.cam.PixelFormat.GetCurrentEntry().GetName().split("PixelFormat_")[1]
+
 
 
         # get the device ip address
