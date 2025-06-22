@@ -47,6 +47,14 @@ class Camera:
         # get the device vendor name
         self.device_vendor_name: str = self.cam.DeviceVendorName.GetValue()
 
+        # height and width
+        self.height: int = self.cam.Height.GetValue()
+        self.width: int = self.cam.Width.GetValue()
+        # resolution
+        self.resolution: str = f"{(self.width*self.height)/1000000:.2f}MP"
+        self.pixel_format: str = self.cam.PixelFormat.GetValue()
+
+
         # get the device ip address
         # check if the device is GigE or USB
         # GigE
@@ -80,6 +88,10 @@ class Camera:
             f"  Model: {self.device_model_name} (Serial: {self.device_serial_number})\n"
             f"  Index: {self._cam_index + 1} (out of {len(self._cams)} cameras)\n"
             f"  Local IP Address: {self.device_ip_address}\n"
+            f"  Height: {self.height}\n"
+            f"  Width: {self.width}\n"
+            f"  Resolution: {self.resolution}\n"
+            f"  Pixel Format: {self.pixel_format}\n"
             f"  Temperature: {self.device_temperature:.2f}\u2103\n"
             f"  Initialised: {self.is_initialised()}\n"
             f"  Streaming: {self.is_streaming()}\n"
